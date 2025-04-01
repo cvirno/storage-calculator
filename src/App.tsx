@@ -16,24 +16,23 @@ function AppContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="app-container">
-        <header className="app-header">
-          <h1>InfiniSizing</h1>
-          <div className="auth-buttons">
-            <button onClick={() => loginWithRedirect()} className="login-button">
-              Login
-            </button>
+      <div className="min-h-screen bg-slate-900 text-white">
+        <div className="container mx-auto px-4 py-6">
+          <header className="app-header">
+            <h1>InfiniSizing</h1>
+          </header>
+          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+            <div className="login-message text-center">
+              <h2 className="text-2xl font-bold mb-4">Bem-vindo ao InfiniSizing!</h2>
+              <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed">
+                Nosso aplicativo foi desenvolvido com o objetivo de apoiar na arquitetura de infraestrutura, proporcionando informações e insights úteis para seus projetos. No entanto, ressaltamos que os resultados obtidos e decisões tomadas com base nas informações fornecidas pelo aplicativo são de total responsabilidade do usuário.
+              </p>
+              <p className="mt-6 text-slate-400 text-2xl font-medium">Por favor, faça login para acessar o Sizing</p>
+              <button onClick={() => loginWithRedirect()} className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium">
+                Login
+              </button>
+            </div>
           </div>
-        </header>
-        <div className="login-message">
-          <h2 className="text-2xl font-bold mb-4">Bem-vindo ao InfiniSizing!</h2>
-          <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Nosso aplicativo foi desenvolvido com o objetivo de apoiar na arquitetura de infraestrutura, proporcionando informações e insights úteis para seus projetos. No entanto, ressaltamos que os resultados obtidos e decisões tomadas com base nas informações fornecidas pelo aplicativo são de total responsabilidade do usuário.
-          </p>
-          <p className="mt-6 text-slate-400 text-2xl font-medium">Por favor, faça login para acessar o Sizing</p>
-          <button onClick={() => loginWithRedirect()} className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium">
-            Login
-          </button>
         </div>
       </div>
     );
