@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Cpu, Server, AlertTriangle, HardDrive, Gauge, Layers, Activity, Power, MemoryStick } from 'lucide-react';
+import { Cpu, Server, AlertTriangle, HardDrive, Gauge, Layers, Activity, Power, MemoryStick, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../lib/supabase';
 
@@ -50,21 +50,24 @@ interface VirtualMachine {
 
 interface ServerConfig {
   formFactor: '1U' | '2U';
+  processorsPerServer: number;
   maxDisksPerServer: number;
   disksPerServer: number;
   diskSize: number;
-  raidType: 'RAID 1' | 'RAID 5' | 'RAID 6' | 'RAID 10';
+  raidType: 'RAID1' | 'RAID5' | 'RAID6';
+  dataReductionRatio: number;
+  considerNPlusOne: boolean;
   memoryDimmSize: number;
   memoryDimmsPerServer: number;
-  maxUtilization: number;
+  utilizationThreshold: number;
 }
 
 const RAID_FACTORS = {
-  'RAID 1': 0.5,
-  'RAID 5': 0.75,
-  'RAID 6': 0.67,
-  'RAID 10': 0.5
-};
+  'RAID1': 0.5,
+  'RAID5': 0.75,
+  'RAID6': 0.67,
+  'RAID10': 0.5
+} as const;
 
 const formatStorage = (gb: number): string => {
   const GiB = gb * (1000/1024); // Convert GB to GiB
@@ -100,13 +103,16 @@ const VirtualizationCalculator = () => {
   const [considerNPlusOne, setConsiderNPlusOne] = useState(true);
   const [serverConfig, setServerConfig] = useState<ServerConfig>({
     formFactor: '2U',
+    processorsPerServer: 2,
     maxDisksPerServer: 24,
     disksPerServer: 12,
-    diskSize: DISK_SIZES[0],
-    raidType: 'RAID 5',
-    memoryDimmSize: 32,
-    memoryDimmsPerServer: 16,
-    maxUtilization: 90
+    diskSize: 960,
+    raidType: 'RAID5',
+    dataReductionRatio: 1.0,
+    considerNPlusOne: true,
+    memoryDimmSize: 64,
+    memoryDimmsPerServer: 2,
+    utilizationThreshold: 95
   });
 
   useEffect(() => {
@@ -167,32 +173,39 @@ const VirtualizationCalculator = () => {
     if (!selectedProcessor) return { total: 0, forCompute: 0, forStorage: 0, forMemory: 0, storagePerServer: 0 };
 
     const totalResources = calculateTotalResources();
-    const maxUtilizationFactor = serverConfig.maxUtilization / 100;
+    const UTILIZATION_LIMIT = serverConfig.utilizationThreshold / 100;
     
-    // Calculate servers needed for CPU
-    const requiredCores = Math.ceil(totalResources.vCPUs / coreRatio / maxUtilizationFactor);
-    const coresPerServer = selectedProcessor.cores * 2;
-    const serversForCompute = Math.ceil(requiredCores / coresPerServer);
+    // Calculate servers needed for compute
+    const requiredCores = Math.ceil(totalResources.vCPUs / coreRatio);
+    const coresPerServer = selectedProcessor.cores * serverConfig.processorsPerServer;
+    const serversForCompute = Math.ceil(requiredCores / (coresPerServer * UTILIZATION_LIMIT));
     
     // Calculate servers needed for memory
     const memoryPerServer = serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
-    const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * maxUtilizationFactor));
+    const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT));
     
     // Calculate servers needed for storage
     const totalStorageGB = totalResources.storage;
-    const usableStoragePerDisk = serverConfig.diskSize * RAID_FACTORS[serverConfig.raidType];
+    let usableStoragePerDisk = serverConfig.diskSize;
+
+    // Apply RAID factor
+    usableStoragePerDisk *= RAID_FACTORS[serverConfig.raidType];
+
+    // Apply data reduction ratio
+    usableStoragePerDisk *= serverConfig.dataReductionRatio;
+
+    // Calculate usable storage per server
     const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
-    const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * maxUtilizationFactor));
-    
-    // Take the maximum of servers needed for all resources
-    let servers = Math.max(serversForCompute, serversForStorage, serversForMemory);
-    
-    if (considerNPlusOne) {
-      servers += 1;
-    }
+    const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * UTILIZATION_LIMIT));
+
+    // Determine the maximum number of servers needed
+    const maxServers = Math.max(serversForCompute, serversForStorage, serversForMemory);
+
+    // Add one more server if N+1 is considered
+    const totalServers = serverConfig.considerNPlusOne ? maxServers + 1 : maxServers;
 
     return {
-      total: servers,
+      total: totalServers,
       forCompute: serversForCompute,
       forStorage: serversForStorage,
       forMemory: serversForMemory,
@@ -200,29 +213,36 @@ const VirtualizationCalculator = () => {
     };
   };
 
-  const calculateResourceUtilization = () => {
-    if (!selectedProcessor) return { cpu: 0, memory: 0, storage: 0 };
+  const calculateCPUUtilization = () => {
+    if (!selectedProcessor) return 0;
     
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
     
-    // Calculate CPU utilization
     const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
     const cpuUtilization = (totalResources.vCPUs / (totalAvailableCores * coreRatio)) * 100;
     
-    // Calculate memory utilization
-    const totalAvailableMemory = serverReqs.total * serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
+    return Math.min(cpuUtilization, 100);
+  };
+
+  const calculateMemoryUtilization = () => {
+    const totalResources = calculateTotalResources();
+    const serverReqs = calculateRequiredServers();
+    
+    const memoryPerServer = serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
+    const totalAvailableMemory = serverReqs.total * memoryPerServer;
     const memoryUtilization = (totalResources.memory / totalAvailableMemory) * 100;
     
-    // Calculate storage utilization
-    const totalAvailableStorage = serverReqs.total * serverReqs.storagePerServer;
-    const storageUtilization = (totalResources.storage / totalAvailableStorage) * 100;
+    return Math.min(memoryUtilization, 100);
+  };
+
+  const calculateStorageUtilization = () => {
+    const totalResources = calculateTotalResources();
+    const serverReqs = calculateRequiredServers();
     
-    return {
-      cpu: Math.min(cpuUtilization, 100),
-      memory: Math.min(memoryUtilization, 100),
-      storage: Math.min(storageUtilization, 100)
-    };
+    const storageUtilization = (totalResources.storage / (serverReqs.total * serverReqs.storagePerServer)) * 100;
+    
+    return Math.min(storageUtilization, 100);
   };
 
   const calculateTotalSpecInt = () => {
@@ -267,13 +287,16 @@ const VirtualizationCalculator = () => {
       // Reset server configuration to default
       setServerConfig({
         formFactor: '2U',
+        processorsPerServer: 2,
         maxDisksPerServer: 24,
         disksPerServer: 12,
-        diskSize: DISK_SIZES[0],
-        raidType: 'RAID 5',
-        memoryDimmSize: 32,
-        memoryDimmsPerServer: 16,
-        maxUtilization: 90
+        diskSize: 960,
+        raidType: 'RAID5',
+        dataReductionRatio: 1.0,
+        considerNPlusOne: true,
+        memoryDimmSize: 64,
+        memoryDimmsPerServer: 2,
+        utilizationThreshold: 95
       });
 
       // Reset other settings
@@ -289,34 +312,36 @@ const VirtualizationCalculator = () => {
 
   const totalResources = calculateTotalResources();
   const serverRequirements = calculateRequiredServers();
-  const utilization = calculateResourceUtilization();
+  const cpuUtilization = calculateCPUUtilization();
+  const memoryUtilization = calculateMemoryUtilization();
+  const storageUtilization = calculateStorageUtilization();
 
   const utilizationCards = [
     {
       title: 'CPU Utilization',
-      value: utilization.cpu.toFixed(1) + '%',
+      value: cpuUtilization.toFixed(1) + '%',
       icon: <Cpu className="text-blue-400" />,
       data: [
-        { name: 'Used', value: utilization.cpu },
-        { name: 'Available', value: 100 - utilization.cpu }
+        { name: 'Used', value: cpuUtilization },
+        { name: 'Available', value: 100 - cpuUtilization }
       ]
     },
     {
       title: 'Memory Utilization',
-      value: utilization.memory.toFixed(1) + '%',
+      value: memoryUtilization.toFixed(1) + '%',
       icon: <MemoryStick className="text-emerald-400" />,
       data: [
-        { name: 'Used', value: utilization.memory },
-        { name: 'Available', value: 100 - utilization.memory }
+        { name: 'Used', value: memoryUtilization },
+        { name: 'Available', value: 100 - memoryUtilization }
       ]
     },
     {
       title: 'Storage Utilization',
-      value: utilization.storage.toFixed(1) + '%',
+      value: storageUtilization.toFixed(1) + '%',
       icon: <HardDrive className="text-amber-400" />,
       data: [
-        { name: 'Used', value: utilization.storage },
-        { name: 'Available', value: 100 - utilization.storage }
+        { name: 'Used', value: storageUtilization },
+        { name: 'Available', value: 100 - storageUtilization }
       ]
     }
   ];
@@ -450,10 +475,15 @@ const VirtualizationCalculator = () => {
                   </label>
                   <input
                     type="number"
-                    value={serverConfig.maxUtilization}
-                    onChange={(e) => setServerConfig({ ...serverConfig, maxUtilization: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                    value={serverConfig.utilizationThreshold}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      if (value >= 1 && value <= 100) {
+                        setServerConfig({ ...serverConfig, utilizationThreshold: value });
+                      }
+                    }}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                    min="0"
+                    min="1"
                     max="100"
                   />
                 </div>
@@ -604,6 +634,32 @@ const VirtualizationCalculator = () => {
                     <option value="RAID 10">RAID 10 (50% usable)</option>
                   </select>
                 </div>
+
+                <div className="bg-slate-700/50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 text-slate-300 mb-2">
+                    <AlertCircle size={20} />
+                    <span>Threshold de Utilização</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={serverConfig.utilizationThreshold}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (value >= 1 && value <= 100) {
+                          setServerConfig({ ...serverConfig, utilizationThreshold: value });
+                        }
+                      }}
+                      className="w-24 bg-slate-600 rounded-lg px-3 py-2 text-white"
+                      min="1"
+                      max="100"
+                    />
+                    <span className="text-slate-300">%</span>
+                  </div>
+                  <p className="text-sm text-slate-400 mt-2">
+                    Quando qualquer recurso (CPU, Memória ou Armazenamento) atingir este valor, um novo servidor será adicionado.
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -725,10 +781,10 @@ const VirtualizationCalculator = () => {
                   </div>
                 </div>
 
-                {card.data[0].value > serverConfig.maxUtilization && (
+                {card.data[0].value > serverConfig.utilizationThreshold && (
                   <div className="mt-4 bg-red-900/50 text-red-200 p-3 rounded-lg flex items-center gap-2 text-sm">
                     <AlertTriangle size={16} />
-                    <p>Exceeds {serverConfig.maxUtilization}% threshold</p>
+                    <p>Exceeds {serverConfig.utilizationThreshold}% threshold</p>
                   </div>
                 )}
               </div>
