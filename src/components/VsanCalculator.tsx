@@ -57,7 +57,6 @@ interface ServerConfig {
   ftt: 1 | 2;
   raidType: 'RAID1' | 'RAID5';
   dataReductionRatio: number;
-  utilizationThreshold: number;
 }
 
 const FTT_RAID_FACTORS = {
@@ -115,8 +114,7 @@ const VsanCalculator = () => {
     diskSize: DISK_SIZES[0],
     ftt: 1,
     raidType: 'RAID5',
-    dataReductionRatio: 1.0,
-    utilizationThreshold: 95
+    dataReductionRatio: 1.0
   });
 
   useEffect(() => {
@@ -174,19 +172,14 @@ const VsanCalculator = () => {
   };
 
   const calculateRequiredServers = () => {
-    if (!selectedProcessor) return { total: 0, forCompute: 0, forStorage: 0, forMemory: 0, storagePerServer: 0 };
+    if (!selectedProcessor) return { total: 0, forCompute: 0, forStorage: 0, storagePerServer: 0 };
 
     const totalResources = calculateTotalResources();
-    const UTILIZATION_LIMIT = serverConfig.utilizationThreshold / 100;
     
     // Calculate servers needed for compute
     const requiredCores = Math.ceil(totalResources.vCPUs / vmCoreRatio);
     const coresPerServer = selectedProcessor.cores * processorsPerServer;
-    const serversForCompute = Math.ceil(requiredCores / (coresPerServer * UTILIZATION_LIMIT));
-    
-    // Calculate servers needed for memory
-    const memoryPerServer = 768; // Assuming 768GB per server
-    const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT));
+    const serversForCompute = Math.ceil(requiredCores / coresPerServer);
     
     // Calculate servers needed for storage
     const totalStorageGB = totalResources.storage;
@@ -199,10 +192,10 @@ const VsanCalculator = () => {
     usableStoragePerDisk *= serverConfig.dataReductionRatio;
 
     const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
-    const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * UTILIZATION_LIMIT));
+    const serversForStorage = Math.ceil(totalStorageGB / usableStoragePerServer);
     
     // Get the maximum number of servers needed based on all resources
-    let servers = Math.max(serversForCompute, serversForStorage, serversForMemory);
+    let servers = Math.max(serversForCompute, serversForStorage);
     
     if (considerNPlusOne) {
       servers += 1;
@@ -212,7 +205,6 @@ const VsanCalculator = () => {
       total: servers,
       forCompute: serversForCompute,
       forStorage: serversForStorage,
-      forMemory: serversForMemory,
       storagePerServer: usableStoragePerServer
     };
   };
@@ -226,18 +218,7 @@ const VsanCalculator = () => {
     const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
     const cpuUtilization = (totalResources.vCPUs / (totalAvailableCores * vmCoreRatio)) * 100;
     
-    return Math.min(cpuUtilization, serverConfig.utilizationThreshold);
-  };
-
-  const calculateMemoryUtilization = () => {
-    const totalResources = calculateTotalResources();
-    const serverReqs = calculateRequiredServers();
-    
-    const memoryPerServer = 768; // Assuming 768GB per server
-    const totalAvailableMemory = serverReqs.total * memoryPerServer;
-    const memoryUtilization = (totalResources.memory / totalAvailableMemory) * 100;
-    
-    return Math.min(memoryUtilization, serverConfig.utilizationThreshold);
+    return cpuUtilization;
   };
 
   const calculateStorageUtilization = () => {
@@ -246,7 +227,7 @@ const VsanCalculator = () => {
     
     const storageUtilization = (totalResources.storage / (serverReqs.total * serverReqs.storagePerServer)) * 100;
     
-    return Math.min(storageUtilization, serverConfig.utilizationThreshold);
+    return storageUtilization;
   };
 
   const calculateTotalSpecInt = () => {
@@ -268,17 +249,11 @@ const VsanCalculator = () => {
   const totalResources = calculateTotalResources();
   const serverRequirements = calculateRequiredServers();
   const cpuUtilization = calculateCPUUtilization();
-  const memoryUtilization = calculateMemoryUtilization();
   const storageUtilization = calculateStorageUtilization();
 
   const cpuUtilizationData = [
     { name: 'Used', value: cpuUtilization },
     { name: 'Available', value: 100 - cpuUtilization }
-  ];
-
-  const memoryUtilizationData = [
-    { name: 'Used', value: memoryUtilization },
-    { name: 'Available', value: 100 - memoryUtilization }
   ];
 
   const storageUtilizationData = [
@@ -304,8 +279,7 @@ const VsanCalculator = () => {
         diskSize: DISK_SIZES[0],
         ftt: 1,
         raidType: 'RAID5',
-        dataReductionRatio: 1.0,
-        utilizationThreshold: 95
+        dataReductionRatio: 1.0
       });
 
       // Reset other settings
@@ -327,8 +301,6 @@ const VsanCalculator = () => {
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-slate-800 p-6 rounded-xl shadow-xl">
-          <h2 className="text-xl font-semibold mb-6">Configuração VM</h2>
-          
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Configuração VM</h2>
             <button
@@ -643,18 +615,6 @@ const VsanCalculator = () => {
                 Consider N+1 redundancy
               </label>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Threshold de Utilização (%)</label>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={serverConfig.utilizationThreshold}
-                onChange={(e) => setServerConfig({ ...serverConfig, utilizationThreshold: Number(e.target.value) })}
-                className="w-20 px-2 py-1 border rounded-md"
-              />
-            </div>
           </div>
         </div>
 
@@ -669,8 +629,6 @@ const VsanCalculator = () => {
                 <div className="text-[9px] text-slate-400 mt-1">
                   <p>Computação: {serverRequirements.forCompute}</p>
                   <p>Armazenamento: {serverRequirements.forStorage}</p>
-                  <p>Memória: {serverRequirements.forMemory}</p>
-                  {considerNPlusOne && <p>Inclui redundância N+1</p>}
                 </div>
               </div>
               
@@ -748,66 +706,7 @@ const VsanCalculator = () => {
                 </div>
 
                 {cpuUtilization > 80 && (
-                  <div className="mt-4 bg-red-900/50 text-red-200 p-3 rounded-lg flex items-center gap-2">
-                    <AlertTriangle size={16} />
-                    <p className="text-[10px]">High utilization!</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Memory Utilization */}
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <Memory className="text-emerald-400" size={24} />
-                    <div>
-                      <h3 className="text-lg font-semibold">Memory</h3>
-                      <p className="text-3xl font-bold mt-1">{memoryUtilization.toFixed(1)}%</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <ResponsiveContainer width="100%" height={100}>
-                  <PieChart>
-                    <Pie
-                      data={memoryUtilizationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={25}
-                      outerRadius={40}
-                      fill="#8884d8"
-                      paddingAngle={2}
-                      dataKey="value"
-                      startAngle={180}
-                      endAngle={0}
-                    >
-                      {memoryUtilizationData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></div>
-                      <span className="text-[10px]">Used</span>
-                    </div>
-                    <span className="font-medium text-[10px]">{memoryUtilization.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></div>
-                      <span className="text-[10px]">Available</span>
-                    
-                    </div>
-                    <span className="font-medium text-[10px]">{(100 - memoryUtilization).toFixed(1)}%</span>
-                  </div>
-                </div>
-
-                {memoryUtilization > 80 && (
-                  <div className="mt-4 bg-red-900/50 text-red-200 p-3 rounded-lg flex items-center gap-2">
+                  <div className="mt-4 bg-slate-900/50 text-slate-200 p-3 rounded-lg flex items-center gap-2">
                     <AlertTriangle size={16} />
                     <p className="text-[10px]">High utilization!</p>
                   </div>
@@ -865,7 +764,7 @@ const VsanCalculator = () => {
                 </div>
 
                 {storageUtilization > 80 && (
-                  <div className="mt-4 bg-red-900/50 text-red-200 p-3 rounded-lg flex items-center gap-2">
+                  <div className="mt-4 bg-slate-900/50 text-slate-200 p-3 rounded-lg flex items-center gap-2">
                     <AlertTriangle size={16} />
                     <p className="text-[10px]">High utilization!</p>
                   </div>
@@ -874,14 +773,14 @@ const VsanCalculator = () => {
             </div>
 
             {(totalResources.vCPUs) / (serverRequirements.total * selectedProcessor.cores * 2) > vmCoreRatio && (
-              <div className="mt-4 bg-red-900/50 text-red-200 p-4 rounded-lg flex items-center gap-2">
+              <div className="mt-4 bg-slate-900/50 text-slate-200 p-4 rounded-lg flex items-center gap-2">
                 <AlertTriangle size={20} />
                 <p className="text-[9px]">Warning: vCPU to pCPU ratio exceeds recommended limit!</p>
               </div>
             )}
 
             {totalResources.storage / serverRequirements.total > serverRequirements.storagePerServer && (
-              <div className="mt-4 bg-red-900/50 text-red-200 p-4 rounded-lg flex items-center gap-2">
+              <div className="mt-4 bg-slate-900/50 text-slate-200 p-4 rounded-lg flex items-center gap-2">
                 <AlertTriangle size={20} />
                 <p className="text-[9px]">Warning: Storage requirements exceed server capacity!</p>
               </div>
