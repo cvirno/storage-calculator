@@ -16,7 +16,7 @@ function AppContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-950 text-white">
         <div className="container mx-auto px-4 py-6">
           <header className="flex justify-between items-center mb-12 animate-fade-in">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">InfiniSizing</h1>
@@ -24,16 +24,16 @@ function AppContent() {
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
             <div className="max-w-3xl mx-auto text-center animate-slide-up">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="p-4 bg-slate-800/50 rounded-lg animate-float">
+                <div className="p-4 bg-blue-800/30 rounded-lg animate-float">
                   <Desktop size={32} className="mx-auto text-red-400" />
                 </div>
-                <div className="p-4 bg-slate-800/50 rounded-lg animate-float-delayed">
+                <div className="p-4 bg-blue-800/30 rounded-lg animate-float-delayed">
                   <Globe size={32} className="mx-auto text-red-400" />
                 </div>
-                <div className="p-4 bg-slate-800/50 rounded-lg animate-float-more-delayed">
+                <div className="p-4 bg-blue-800/30 rounded-lg animate-float-more-delayed">
                   <Database size={32} className="mx-auto text-red-400" />
                 </div>
-                <div className="p-4 bg-slate-800/50 rounded-lg animate-float-most-delayed">
+                <div className="p-4 bg-blue-800/30 rounded-lg animate-float-most-delayed">
                   <HardDrive size={32} className="mx-auto text-red-400" />
                 </div>
               </div>
@@ -45,13 +45,13 @@ function AppContent() {
                 Simplifique seus cálculos e tome decisões mais informadas para seus projetos.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="p-4 bg-slate-800/30 rounded-lg">
+                <div className="p-4 bg-blue-800/30 rounded-lg">
                   <Shield size={24} className="mx-auto text-red-400 mb-2" />
                 </div>
-                <div className="p-4 bg-slate-800/30 rounded-lg">
+                <div className="p-4 bg-blue-800/30 rounded-lg">
                   <ChartLine size={24} className="mx-auto text-red-400 mb-2" />
                 </div>
-                <div className="p-4 bg-slate-800/30 rounded-lg">
+                <div className="p-4 bg-blue-800/30 rounded-lg">
                   <Users size={24} className="mx-auto text-red-400 mb-2" />
                 </div>
               </div>

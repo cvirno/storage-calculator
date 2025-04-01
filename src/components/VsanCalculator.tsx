@@ -879,7 +879,7 @@ const VsanCalculator = () => {
             type="number"
             value={utilizationThreshold}
             onChange={(e) => setUtilizationThreshold(Number(e.target.value))}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             min="0"
             max="100"
           />
@@ -903,7 +903,7 @@ const VsanCalculator = () => {
             <div className="mt-2">
               <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-red-500 transition-all duration-500"
+                  className="h-full bg-blue-500 transition-all duration-500"
                   style={{ width: `${(calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100}%` }}
                 />
               </div>
