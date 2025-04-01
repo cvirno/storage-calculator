@@ -7,7 +7,7 @@ import StorageCalculator from './components/StorageCalculator'
 import VsanCalculator from './components/VsanCalculator'
 import BackupCalculator from './components/BackupCalculator'
 import Header from './components/Header'
-import { Desktop, Cpu, HardDrive, Globe, Database, ArrowRight, Server, Network, Cloud, Shield, Lock, ChartLine, Users, Rocket } from 'phosphor-react'
+import { Desktop, Cpu, HardDrive, Globe, Database, ArrowRight, ChartLine, Users, Shield } from 'phosphor-react'
 import { auth0Config } from './auth0-config'
 
 function AppContent() {
@@ -25,16 +25,16 @@ function AppContent() {
             <div className="max-w-3xl mx-auto text-center animate-slide-up">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float">
-                  <Server size={32} className="mx-auto text-blue-400" />
+                  <Desktop size={32} className="mx-auto text-blue-400" />
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float-delayed">
-                  <Network size={32} className="mx-auto text-blue-400" />
+                  <Globe size={32} className="mx-auto text-blue-400" />
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float-more-delayed">
-                  <Cloud size={32} className="mx-auto text-blue-400" />
+                  <Database size={32} className="mx-auto text-blue-400" />
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float-most-delayed">
-                  <Database size={32} className="mx-auto text-blue-400" />
+                  <HardDrive size={32} className="mx-auto text-blue-400" />
                 </div>
               </div>
               <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
