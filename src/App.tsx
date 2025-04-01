@@ -31,6 +31,9 @@ function AppContent() {
             Nosso aplicativo foi desenvolvido com o objetivo de apoiar na arquitetura de infraestrutura, proporcionando informações e insights úteis para seus projetos. No entanto, ressaltamos que os resultados obtidos e decisões tomadas com base nas informações fornecidas pelo aplicativo são de total responsabilidade do usuário.
           </p>
           <p className="mt-6 text-slate-400 text-2xl font-medium">Por favor, faça login para acessar o Sizing</p>
+          <button onClick={() => loginWithRedirect()} className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium">
+            Login
+          </button>
         </div>
       </div>
     );
@@ -49,12 +52,14 @@ function AppContent() {
             </p>
           </div>
           <div className="auth-buttons">
-            <div className="user-info">
-              <span className="welcome-text">Bem Vindo ao InfiniSizing</span>
-              <button onClick={() => logout()} className="logout-button">
-                Logout
-              </button>
-            </div>
+            {isAuthenticated && (
+              <div className="user-info">
+                <span className="welcome-text">Bem Vindo ao InfiniSizing</span>
+                <button onClick={() => logout()} className="logout-button">
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
         
