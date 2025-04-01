@@ -26,8 +26,11 @@ function AppContent() {
           </div>
         </header>
         <div className="login-message">
-          <h2>Bem-vindo ao Private Cloud Sizing</h2>
-          <p>Por favor, faça login para acessar a calculadora.</p>
+          <h2 className="text-2xl font-bold mb-4">Bem-vindo ao InfiniSizing!</h2>
+          <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            Nosso aplicativo foi desenvolvido com o objetivo de apoiar na arquitetura de infraestrutura, proporcionando informações e insights úteis para seus projetos. No entanto, ressaltamos que os resultados obtidos e decisões tomadas com base nas informações fornecidas pelo aplicativo são de total responsabilidade do usuário.
+          </p>
+          <p className="mt-4 text-slate-400">Por favor, faça login para acessar a calculadora.</p>
         </div>
       </div>
     );
