@@ -31,6 +31,9 @@ const DATA_REDUCTION_RATIOS = [
   1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 1.9, 2.0
 ];
 
+const MEMORY_DIMM_SIZES = [32, 64, 128, 256];
+const MAX_DIMMS_PER_SERVER = 32;
+
 interface Processor {
   id: string;
   name: string;
@@ -59,6 +62,8 @@ interface ServerConfig {
   raidType: 'RAID1' | 'RAID5' | 'RAID6';
   dataReductionRatio: number;
   considerNPlusOne: boolean;
+  memoryDimmSize: number;
+  memoryDimmsPerServer: number;
 }
 
 const FTT_RAID_FACTORS: Record<1 | 2 | 3, Record<'RAID1' | 'RAID5' | 'RAID6', number>> = {
@@ -113,7 +118,9 @@ const VsanCalculator = () => {
     ftt: 1,
     raidType: 'RAID5',
     dataReductionRatio: 1.0,
-    considerNPlusOne: true
+    considerNPlusOne: true,
+    memoryDimmSize: 64,
+    memoryDimmsPerServer: 2
   });
 
   useEffect(() => {
@@ -182,7 +189,7 @@ const VsanCalculator = () => {
     const serversForCompute = Math.ceil(requiredCores / (coresPerServer * UTILIZATION_LIMIT));
     
     // Calculate servers needed for memory
-    const memoryPerServer = 768; // Assuming 768GB per server
+    const memoryPerServer = serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
     const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT));
     
     // Calculate servers needed for storage
@@ -198,10 +205,10 @@ const VsanCalculator = () => {
     const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
     const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * UTILIZATION_LIMIT));
     
-    // Get the maximum number of servers needed based on all resources
+    // Take the maximum of servers needed for all resources
     let servers = Math.max(serversForCompute, serversForStorage, serversForMemory);
     
-    if (considerNPlusOne) {
+    if (serverConfig.considerNPlusOne) {
       servers += 1;
     }
 
@@ -303,7 +310,9 @@ const VsanCalculator = () => {
         ftt: 1,
         raidType: 'RAID5',
         dataReductionRatio: 1.0,
-        considerNPlusOne: true
+        considerNPlusOne: true,
+        memoryDimmSize: 64,
+        memoryDimmsPerServer: 2
       });
 
       // Reset other settings
@@ -611,6 +620,67 @@ const VsanCalculator = () => {
                 Consider N+1 redundancy
               </label>
             </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-base font-medium text-slate-300 mb-2">
+                  Tamanho do DIMM de Memória
+                </label>
+                <select
+                  value={serverConfig.memoryDimmSize}
+                  onChange={(e) => setServerConfig({ ...serverConfig, memoryDimmSize: Number(e.target.value) })}
+                  className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
+                >
+                  {MEMORY_DIMM_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size} GB
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-base font-medium text-slate-300 mb-2">
+                  Número de DIMMs por Servidor
+                </label>
+                <input
+                  type="number"
+                  value={serverConfig.memoryDimmsPerServer}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (value > MAX_DIMMS_PER_SERVER) {
+                      alert(`O número máximo de DIMMs por servidor é ${MAX_DIMMS_PER_SERVER}`);
+                      return;
+                    }
+                    setServerConfig({ 
+                      ...serverConfig, 
+                      memoryDimmsPerServer: Math.max(1, value)
+                    });
+                  }}
+                  className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
+                  min="1"
+                  max={MAX_DIMMS_PER_SERVER}
+                />
+                <p className="text-sm text-slate-400 mt-1">
+                  Máximo de {MAX_DIMMS_PER_SERVER} DIMMs por servidor
+                </p>
+                {serverConfig.memoryDimmsPerServer > MAX_DIMMS_PER_SERVER && (
+                  <p className="text-sm text-red-400 mt-1">
+                    O número de DIMMs excede o máximo permitido
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-slate-700/50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Memory size={20} />
+                  <span>Memória Total por Servidor:</span>
+                  <span className="font-bold">
+                    {serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer} GB
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -662,110 +732,27 @@ const VsanCalculator = () => {
                     </div>
                   </div>
                 </div>
-                
-                <ResponsiveContainer width="100%" height={100}>
-                  <PieChart>
-                    <Pie
-                      data={cpuUtilizationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={25}
-                      outerRadius={40}
-                      fill="#8884d8"
-                      paddingAngle={2}
-                      dataKey="value"
-                      startAngle={180}
-                      endAngle={0}
-                    >
-                      {cpuUtilizationData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></div>
-                      <span className="text-sm">Used</span>
-                    </div>
-                    <span className="font-medium text-sm">{cpuUtilization.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></div>
-                      <span className="text-sm">Available</span>
-                    </div>
-                    <span className="font-medium text-sm">{(100 - cpuUtilization).toFixed(1)}%</span>
-                  </div>
-                </div>
-
-                {cpuUtilization > 80 && (
-                  <div className="mt-4 bg-red-900/50 text-red-200 p-3 rounded-lg flex items-center gap-2">
-                    <AlertTriangle size={16} />
-                    <p className="text-sm">High utilization!</p>
-                  </div>
-                )}
               </div>
 
               {/* Memory Utilization */}
               <div className="bg-slate-700 p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <Memory className="text-emerald-400" size={24} />
+                    <Memory className="text-green-400" size={24} />
                     <div>
-                      <h3 className="text-lg font-semibold">Memory</h3>
-                      <p className="text-3xl font-bold mt-1">{memoryUtilization.toFixed(1)}%</p>
+                      <h3 className="text-lg font-semibold">Memória</h3>
+                      <p className="text-3xl font-bold mt-1">
+                        {(totalResources.memory / (serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer * serverRequirements.total) * 100).toFixed(1)}%
+                      </p>
                     </div>
                   </div>
                 </div>
-                
-                <ResponsiveContainer width="100%" height={100}>
-                  <PieChart>
-                    <Pie
-                      data={memoryUtilizationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={25}
-                      outerRadius={40}
-                      fill="#8884d8"
-                      paddingAngle={2}
-                      dataKey="value"
-                      startAngle={180}
-                      endAngle={0}
-                    >
-                      {memoryUtilizationData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></div>
-                      <span className="text-sm">Used</span>
-                    </div>
-                    <span className="font-medium text-sm">{memoryUtilization.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></div>
-                      <span className="text-sm">Available</span>
-                    
-                    </div>
-                    <span className="font-medium text-sm">{(100 - memoryUtilization).toFixed(1)}%</span>
-                  </div>
+                <div className="text-sm text-slate-400">
+                  <p>Total Necessário: {totalResources.memory.toFixed(0)} GB</p>
+                  <p>Por Servidor: {(serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer)} GB</p>
+                  <p>Configuração: {serverConfig.memoryDimmsPerServer}x {serverConfig.memoryDimmSize}GB DIMMs</p>
+                  <p>Total Disponível: {(serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer * serverRequirements.total)} GB</p>
                 </div>
-
-                {memoryUtilization > 80 && (
-                  <div className="mt-4 bg-red-900/50 text-red-200 p-3 rounded-lg flex items-center gap-2">
-                    <AlertTriangle size={16} />
-                    <p className="text-sm">High utilization!</p>
-                  </div>
-                )}
               </div>
 
               {/* Storage Utilization */}
@@ -779,51 +766,6 @@ const VsanCalculator = () => {
                     </div>
                   </div>
                 </div>
-                
-                <ResponsiveContainer width="100%" height={100}>
-                  <PieChart>
-                    <Pie
-                      data={storageUtilizationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={25}
-                      outerRadius={40}
-                      fill="#8884d8"
-                      paddingAngle={2}
-                      dataKey="value"
-                      startAngle={180}
-                      endAngle={0}
-                    >
-                      {storageUtilizationData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></div>
-                      <span className="text-sm">Used</span>
-                    </div>
-                    <span className="font-medium text-sm">{storageUtilization.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></div>
-                      <span className="text-sm">Available</span>
-                    </div>
-                    <span className="font-medium text-sm">{(100 - storageUtilization).toFixed(1)}%</span>
-                  </div>
-                </div>
-
-                {storageUtilization > 80 && (
-                  <div className="mt-4 bg-red-900/50 text-red-200 p-3 rounded-lg flex items-center gap-2">
-                    <AlertTriangle size={16} />
-                    <p className="text-sm">High utilization!</p>
-                  </div>
-                )}
               </div>
             </div>
 
