@@ -1,7 +1,7 @@
 export const auth0Config = {
-  domain: "dev-8q5q5q5q5q5q5q5q5q5q.us.auth0.com",
-  clientId: "8q5q5q5q5q5q5q5q5q5q",
+  domain: "dev-0afpcj54klh2vplm.us.auth0.com",
+  clientId: "I14u5aeRr4kvPlcLHxhe5mrADSdT8J55",
   authorizationParams: {
-    redirect_uri: window.location.origin
+    redirect_uri: "https://prismatic-choux-897487.netlify.app"
   }
 }; 
