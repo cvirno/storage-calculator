@@ -7,7 +7,7 @@ import StorageCalculator from './components/StorageCalculator'
 import VsanCalculator from './components/VsanCalculator'
 import BackupCalculator from './components/BackupCalculator'
 import Header from './components/Header'
-import { Server, Cpu, HardDrive, NetworkSlash, Database } from 'phosphor-react'
+import { Desktop, Cpu, HardDrive, NetworkX, Database } from 'phosphor-react'
 import { auth0Config } from './auth0-config'
 
 function AppContent() {
@@ -60,7 +60,7 @@ function AppContent() {
                 : 'bg-slate-800/50 hover:bg-slate-700/50'
             }`}
           >
-            <Server size={20} />
+            <Desktop size={20} />
             Physical Servers
           </button>
           <button
@@ -93,7 +93,7 @@ function AppContent() {
                 : 'bg-slate-800/50 hover:bg-slate-700/50'
             }`}
           >
-            <NetworkSlash size={20} />
+            <NetworkX size={20} />
             vSAN
           </button>
           <button
