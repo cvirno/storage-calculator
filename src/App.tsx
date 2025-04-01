@@ -30,7 +30,7 @@ function AppContent() {
           <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Nosso aplicativo foi desenvolvido com o objetivo de apoiar na arquitetura de infraestrutura, proporcionando informações e insights úteis para seus projetos. No entanto, ressaltamos que os resultados obtidos e decisões tomadas com base nas informações fornecidas pelo aplicativo são de total responsabilidade do usuário.
           </p>
-          <p className="mt-6 text-slate-400 text-xl font-medium">Por favor, faça login para acessar o Sizing</p>
+          <p className="mt-6 text-slate-400 text-2xl font-medium">Por favor, faça login para acessar o Sizing</p>
         </div>
       </div>
     );
