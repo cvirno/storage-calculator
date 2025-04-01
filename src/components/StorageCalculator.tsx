@@ -291,13 +291,13 @@ const StorageCalculator = () => {
             </svg>
             Reset All
           </button>
-          <button
-            onClick={exportReport}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex items-center gap-2"
-          >
-            <Download size={20} />
-            Export Report
-          </button>
+        <button
+          onClick={exportReport}
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex items-center gap-2"
+        >
+          <Download size={20} />
+          Export Report
+        </button>
         </div>
       </div>
 
@@ -324,8 +324,8 @@ const StorageCalculator = () => {
               <div className="text-sm text-slate-400 mt-1">
                 After RAID ({config.raidType})
               </div>
+              </div>
             </div>
-          </div>
 
           <div className="mt-8">
             <h3 className="text-lg font-semibold mb-4">Storage Volumetry</h3>
@@ -356,7 +356,7 @@ const StorageCalculator = () => {
           <div className="mt-8">
             <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
             <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
-              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
+            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
                 <Gauge
                   value={performanceMetrics.iops.total}
                   max={STORAGE_TYPE_IOPS[config.storageType].base * config.numberOfDisks * 2}
@@ -413,7 +413,7 @@ const StorageCalculator = () => {
                 <div className="text-sm text-slate-400 mt-1">
                   {Math.round(performanceMetrics.throughput.write)} MB/s
                 </div>
-              </div>
+            </div>
 
               <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
                 <div className="flex items-center gap-2 text-slate-400 mb-2">
@@ -535,8 +535,8 @@ const StorageCalculator = () => {
                   value={config.readPercentage}
                   onChange={(e) => setConfig({ ...config, readPercentage: Number(e.target.value) })}
                   className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                  min="0"
-                  max="100"
+                min="0"
+                max="100"
                   step="1"
                 />
                 <span className="text-sm text-slate-300 min-w-[4rem] text-right">
@@ -561,11 +561,11 @@ const StorageCalculator = () => {
                 min="0"
                 max="100"
               />
-            </div>
+          </div>
 
-            <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
+          <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
               <h4 className="text-sm font-medium text-slate-300 mb-2">Performance Guidelines</h4>
-              <div className="space-y-2 text-sm text-slate-400">
+            <div className="space-y-2 text-sm text-slate-400">
                 <p>SSD: 10,000+ IOPS, 0.1ms latency</p>
                 <p>HDD: 100-200 IOPS, 10ms latency</p>
                 <p>RAID 1: Best for read performance</p>
