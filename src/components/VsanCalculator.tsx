@@ -124,9 +124,7 @@ const VsanCalculator = () => {
     dataReductionRatio: 1.0
   });
   const [servers, setServers] = useState<Server[]>([{ id: 1, cpu: 0, memory: 0, disk: 0 }]);
-  const [cpuThreshold, setCpuThreshold] = useState(95);
-  const [memoryThreshold, setMemoryThreshold] = useState(95);
-  const [diskThreshold, setDiskThreshold] = useState(95);
+  const [utilizationThreshold, setUtilizationThreshold] = useState(95);
 
   useEffect(() => {
     const fetchProcessors = async () => {
@@ -179,9 +177,9 @@ const VsanCalculator = () => {
     const totalMemory = servers.reduce((sum, server) => sum + server.memory, 0);
     const totalDisk = servers.reduce((sum, server) => sum + server.disk, 0);
 
-    const usableCpu = totalCpu * (cpuThreshold / 100);
-    const usableMemory = totalMemory * (memoryThreshold / 100);
-    const usableDisk = totalDisk * (diskThreshold / 100);
+    const usableCpu = totalCpu * (utilizationThreshold / 100);
+    const usableMemory = totalMemory * (utilizationThreshold / 100);
+    const usableDisk = totalDisk * (utilizationThreshold / 100);
 
     return {
       totalCpu,
@@ -875,39 +873,13 @@ const VsanCalculator = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-slate-800/50 p-4 rounded-lg">
           <label className="block text-sm font-medium text-slate-300 mb-2">
-            Threshold de CPU (%)
+            Threshold de Utilização (%)
           </label>
           <input
             type="number"
-            value={cpuThreshold}
-            onChange={(e) => setCpuThreshold(Number(e.target.value))}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            min="0"
-            max="100"
-          />
-        </div>
-        <div className="bg-slate-800/50 p-4 rounded-lg">
-          <label className="block text-sm font-medium text-slate-300 mb-2">
-            Threshold de Memória (%)
-          </label>
-          <input
-            type="number"
-            value={memoryThreshold}
-            onChange={(e) => setMemoryThreshold(Number(e.target.value))}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            min="0"
-            max="100"
-          />
-        </div>
-        <div className="bg-slate-800/50 p-4 rounded-lg">
-          <label className="block text-sm font-medium text-slate-300 mb-2">
-            Threshold de Disco (%)
-          </label>
-          <input
-            type="number"
-            value={diskThreshold}
-            onChange={(e) => setDiskThreshold(Number(e.target.value))}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={utilizationThreshold}
+            onChange={(e) => setUtilizationThreshold(Number(e.target.value))}
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
             min="0"
             max="100"
           />
@@ -919,21 +891,32 @@ const VsanCalculator = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <p className="text-sm text-slate-400">CPU Total</p>
-            <p className="text-xl font-medium text-white">{totalResources.totalCpu} cores</p>
-            <p className="text-sm text-slate-400">CPU Utilizável ({cpuThreshold}%)</p>
-            <p className="text-xl font-medium text-white">{totalResources.usableCpu.toFixed(1)} cores</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().totalCpu} cores</p>
+            <p className="text-sm text-slate-400">CPU Utilizável ({utilizationThreshold}%)</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().usableCpu.toFixed(1)} cores</p>
           </div>
           <div>
             <p className="text-sm text-slate-400">Memória Total</p>
-            <p className="text-xl font-medium text-white">{totalResources.totalMemory} GB</p>
-            <p className="text-sm text-slate-400">Memória Utilizável ({memoryThreshold}%)</p>
-            <p className="text-xl font-medium text-white">{totalResources.usableMemory.toFixed(1)} GB</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().totalMemory} GB</p>
+            <p className="text-sm text-slate-400">Memória Utilizável ({utilizationThreshold}%)</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().usableMemory.toFixed(1)} GB</p>
+            <div className="mt-2">
+              <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-red-500 transition-all duration-500"
+                  style={{ width: `${(calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                {((calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1)}% de utilização
+              </p>
+            </div>
           </div>
           <div>
             <p className="text-sm text-slate-400">Disco Total</p>
-            <p className="text-xl font-medium text-white">{totalResources.totalDisk} TB</p>
-            <p className="text-sm text-slate-400">Disco Utilizável ({diskThreshold}%)</p>
-            <p className="text-xl font-medium text-white">{totalResources.usableDisk.toFixed(1)} TB</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().totalDisk} TB</p>
+            <p className="text-sm text-slate-400">Disco Utilizável ({utilizationThreshold}%)</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().usableDisk.toFixed(1)} TB</p>
           </div>
         </div>
       </div>
