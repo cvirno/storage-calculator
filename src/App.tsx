@@ -21,7 +21,10 @@ function AppContent() {
           <header className="flex justify-between items-center mb-12 animate-fade-in">
             <div className="flex items-center gap-2">
               <Database size={32} className="text-blue-400" />
-              <h1 className="text-2xl font-bold">Data Center Calculator</h1>
+              <div className="flex flex-col">
+                <h1 className="text-2xl font-bold">InfiniSizing</h1>
+                <span className="text-sm text-blue-400">By Cesar Virno</span>
+              </div>
             </div>
             <button
               onClick={() => logout()}
