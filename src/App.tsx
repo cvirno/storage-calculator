@@ -19,25 +19,25 @@ function AppContent() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
         <div className="container mx-auto px-4 py-6">
           <header className="flex justify-between items-center mb-12 animate-fade-in">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">InfiniSizing</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">InfiniSizing</h1>
           </header>
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
             <div className="max-w-3xl mx-auto text-center animate-slide-up">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float">
-                  <Desktop size={32} className="mx-auto text-blue-400" />
+                  <Desktop size={32} className="mx-auto text-red-400" />
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float-delayed">
-                  <Globe size={32} className="mx-auto text-blue-400" />
+                  <Globe size={32} className="mx-auto text-red-400" />
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float-more-delayed">
-                  <Database size={32} className="mx-auto text-blue-400" />
+                  <Database size={32} className="mx-auto text-red-400" />
                 </div>
                 <div className="p-4 bg-slate-800/50 rounded-lg animate-float-most-delayed">
-                  <HardDrive size={32} className="mx-auto text-blue-400" />
+                  <HardDrive size={32} className="mx-auto text-red-400" />
                 </div>
               </div>
-              <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+              <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
                 Transforme suas ideias em Infraestrutura
               </h2>
               <p className="text-slate-300 text-lg mb-8 leading-relaxed">
@@ -46,22 +46,19 @@ function AppContent() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div className="p-4 bg-slate-800/30 rounded-lg">
-                  <Shield size={24} className="mx-auto text-blue-400 mb-2" />
-                  <p className="text-sm text-slate-300">Segurança Garantida</p>
+                  <Shield size={24} className="mx-auto text-red-400 mb-2" />
                 </div>
                 <div className="p-4 bg-slate-800/30 rounded-lg">
-                  <ChartLine size={24} className="mx-auto text-blue-400 mb-2" />
-                  <p className="text-sm text-slate-300">Cálculos Precisos</p>
+                  <ChartLine size={24} className="mx-auto text-red-400 mb-2" />
                 </div>
                 <div className="p-4 bg-slate-800/30 rounded-lg">
-                  <Users size={24} className="mx-auto text-blue-400 mb-2" />
-                  <p className="text-sm text-slate-300">Para Profissionais</p>
+                  <Users size={24} className="mx-auto text-red-400 mb-2" />
                 </div>
               </div>
               <div className="space-y-4">
                 <button 
                   onClick={() => loginWithRedirect()} 
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center gap-2 mx-auto animate-pulse"
+                  className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-red-500/30 flex items-center gap-2 mx-auto animate-pulse"
                 >
                   Login
                   <ArrowRight size={20} />
