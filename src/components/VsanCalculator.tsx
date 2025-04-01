@@ -64,6 +64,7 @@ interface ServerConfig {
   considerNPlusOne: boolean;
   memoryDimmSize: number;
   memoryDimmsPerServer: number;
+  utilizationThreshold: number;
 }
 
 const FTT_RAID_FACTORS: Record<1 | 2 | 3, Record<'RAID1' | 'RAID5' | 'RAID6', number>> = {
@@ -120,7 +121,8 @@ const VsanCalculator = () => {
     dataReductionRatio: 1.0,
     considerNPlusOne: true,
     memoryDimmSize: 64,
-    memoryDimmsPerServer: 2
+    memoryDimmsPerServer: 2,
+    utilizationThreshold: 95
   });
 
   useEffect(() => {
@@ -181,7 +183,7 @@ const VsanCalculator = () => {
     if (!selectedProcessor) return { total: 0, forCompute: 0, forStorage: 0, forMemory: 0, storagePerServer: 0 };
 
     const totalResources = calculateTotalResources();
-    const UTILIZATION_LIMIT = 0.95; // 95% utilization limit
+    const UTILIZATION_LIMIT = serverConfig.utilizationThreshold / 100;
     
     // Calculate servers needed for compute
     const requiredCores = Math.ceil(totalResources.vCPUs / vmCoreRatio);
@@ -237,7 +239,7 @@ const VsanCalculator = () => {
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
     
-    const memoryPerServer = 768; // Assuming 768GB per server
+    const memoryPerServer = serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
     const totalAvailableMemory = serverReqs.total * memoryPerServer;
     const memoryUtilization = (totalResources.memory / totalAvailableMemory) * 100;
     
@@ -312,7 +314,8 @@ const VsanCalculator = () => {
         dataReductionRatio: 1.0,
         considerNPlusOne: true,
         memoryDimmSize: 64,
-        memoryDimmsPerServer: 2
+        memoryDimmsPerServer: 2,
+        utilizationThreshold: 95
       });
 
       // Reset other settings
@@ -680,6 +683,32 @@ const VsanCalculator = () => {
                   </span>
                 </div>
               </div>
+            </div>
+
+            <div className="bg-slate-700/50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-slate-300 mb-2">
+                <AlertCircle size={20} />
+                <span>Threshold de Utilização</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={serverConfig.utilizationThreshold}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (value >= 1 && value <= 100) {
+                      setServerConfig({ ...serverConfig, utilizationThreshold: value });
+                    }
+                  }}
+                  className="w-24 bg-slate-600 rounded-lg px-3 py-2 text-white"
+                  min="1"
+                  max="100"
+                />
+                <span className="text-slate-300">%</span>
+              </div>
+              <p className="text-sm text-slate-400 mt-2">
+                Quando qualquer recurso (CPU, Memória ou Armazenamento) atingir este valor, um novo servidor será adicionado.
+              </p>
             </div>
           </div>
         </div>
