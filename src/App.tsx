@@ -7,7 +7,7 @@ import StorageCalculator from './components/StorageCalculator'
 import VsanCalculator from './components/VsanCalculator'
 import BackupCalculator from './components/BackupCalculator'
 import Header from './components/Header'
-import { Desktop, Cpu, HardDrive, NetworkX, Database } from 'phosphor-react'
+import { Desktop, Cpu, HardDrive, Globe, Database } from 'phosphor-react'
 import { auth0Config } from './auth0-config'
 
 function AppContent() {
@@ -93,7 +93,7 @@ function AppContent() {
                 : 'bg-slate-800/50 hover:bg-slate-700/50'
             }`}
           >
-            <NetworkX size={20} />
+            <Globe size={20} />
             vSAN
           </button>
           <button
