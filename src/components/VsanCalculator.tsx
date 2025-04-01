@@ -897,18 +897,18 @@ const VsanCalculator = () => {
           </div>
           <div>
             <p className="text-sm text-slate-400">Memória Total</p>
-            <p className="text-xl font-medium text-white">{calculateTotalResources().totalMemory} GB</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().totalMemory || 0} GB</p>
             <p className="text-sm text-slate-400">Memória Utilizável ({utilizationThreshold}%)</p>
             <p className="text-xl font-medium text-white">{calculateTotalResources().usableMemory.toFixed(1)} GB</p>
             <div className="mt-2">
               <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-500 transition-all duration-500"
-                  style={{ width: `${(calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100}%` }}
+                  style={{ width: `${calculateTotalResources().totalMemory > 0 ? (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100 : 0}%` }}
                 />
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                {((calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1)}% de utilização
+                {calculateTotalResources().totalMemory > 0 ? ((calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1) : '0.0'}% de utilização
               </p>
             </div>
           </div>
