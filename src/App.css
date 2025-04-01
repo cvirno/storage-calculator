@@ -1,0 +1,77 @@
+.app-container {
+  min-height: 100vh;
+  background: #0f172a;
+  color: white;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(15, 23, 42, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.login-button,
+.logout-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.login-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+}
+
+.login-button:hover {
+  background: #2563eb;
+}
+
+.logout-button {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.login-message {
+  text-align: center;
+  padding: 2rem;
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.login-message h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.login-message p {
+  color: #94a3b8;
+} 
