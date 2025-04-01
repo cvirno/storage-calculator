@@ -733,6 +733,90 @@ const VsanCalculator = () => {
                 )}
               </div>
 
+              {/* Memory Utilization */}
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Memory className="text-green-400" size={24} />
+                    <div>
+                      <h3 className="text-lg font-semibold">Memory</h3>
+                      <p className="text-3xl font-bold mt-1">
+                        {calculateTotalResources().totalMemory > 0 
+                          ? ((calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1) 
+                          : '0.0'}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <ResponsiveContainer width="100%" height={100}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { 
+                          name: 'Used', 
+                          value: calculateTotalResources().totalMemory > 0 
+                            ? (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100 
+                            : 0 
+                        },
+                        { 
+                          name: 'Available', 
+                          value: calculateTotalResources().totalMemory > 0 
+                            ? 100 - (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100 
+                            : 100 
+                        }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={25}
+                      outerRadius={40}
+                      fill="#8884d8"
+                      paddingAngle={2}
+                      dataKey="value"
+                      startAngle={180}
+                      endAngle={0}
+                    >
+                      {[0, 1].map((index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></div>
+                      <span className="text-[10px]">Used</span>
+                    </div>
+                    <span className="font-medium text-[10px]">
+                      {calculateTotalResources().totalMemory > 0 
+                        ? ((calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1) 
+                        : '0.0'}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></div>
+                      <span className="text-[10px]">Available</span>
+                    </div>
+                    <span className="font-medium text-[10px]">
+                      {calculateTotalResources().totalMemory > 0 
+                        ? (100 - (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1) 
+                        : '100.0'}%
+                    </span>
+                  </div>
+                </div>
+
+                {calculateTotalResources().totalMemory > 0 && 
+                 (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100 > 80 && (
+                  <div className="mt-4 bg-slate-900/50 text-slate-200 p-3 rounded-lg flex items-center gap-2">
+                    <AlertTriangle size={16} />
+                    <p className="text-[10px]">High utilization!</p>
+                  </div>
+                )}
+              </div>
+
               {/* Storage Utilization */}
               <div className="bg-slate-700 p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-4">
