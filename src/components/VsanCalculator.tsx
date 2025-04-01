@@ -124,9 +124,9 @@ const VsanCalculator = () => {
     dataReductionRatio: 1.0
   });
   const [servers, setServers] = useState<Server[]>([{ id: 1, cpu: 0, memory: 0, disk: 0 }]);
-  const [cpuThreshold, setCpuThreshold] = useState(80);
-  const [memoryThreshold, setMemoryThreshold] = useState(80);
-  const [diskThreshold, setDiskThreshold] = useState(80);
+  const [cpuThreshold, setCpuThreshold] = useState(95);
+  const [memoryThreshold, setMemoryThreshold] = useState(95);
+  const [diskThreshold, setDiskThreshold] = useState(95);
 
   useEffect(() => {
     const fetchProcessors = async () => {
