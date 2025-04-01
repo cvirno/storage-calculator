@@ -109,6 +109,18 @@
   }
 }
 
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.8s ease-out;
 }
@@ -119,4 +131,23 @@
 
 .animate-pulse {
   animation: pulse 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 3s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+.animate-float-more-delayed {
+  animation: float 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.animate-float-most-delayed {
+  animation: float 3s ease-in-out infinite;
+  animation-delay: 1.5s;
 } 

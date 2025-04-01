@@ -59,6 +59,13 @@ interface ServerConfig {
   dataReductionRatio: number;
 }
 
+interface Server {
+  id: number;
+  cpu: number;
+  memory: number;
+  disk: number;
+}
+
 const FTT_RAID_FACTORS = {
   1: {
     'RAID1': 1/2,  // FTT 1 with RAID1: 1/2 factor
@@ -116,6 +123,10 @@ const VsanCalculator = () => {
     raidType: 'RAID5',
     dataReductionRatio: 1.0
   });
+  const [servers, setServers] = useState<Server[]>([{ id: 1, cpu: 0, memory: 0, disk: 0 }]);
+  const [cpuThreshold, setCpuThreshold] = useState(80);
+  const [memoryThreshold, setMemoryThreshold] = useState(80);
+  const [diskThreshold, setDiskThreshold] = useState(80);
 
   useEffect(() => {
     const fetchProcessors = async () => {
@@ -164,11 +175,22 @@ const VsanCalculator = () => {
   };
 
   const calculateTotalResources = () => {
-    return vms.reduce((acc, vm) => ({
-      vCPUs: acc.vCPUs + (vm.vCPUs * vm.count),
-      memory: acc.memory + (vm.memory * vm.count),
-      storage: acc.storage + (vm.storage * vm.count)
-    }), { vCPUs: 0, memory: 0, storage: 0 });
+    const totalCpu = servers.reduce((sum, server) => sum + server.cpu, 0);
+    const totalMemory = servers.reduce((sum, server) => sum + server.memory, 0);
+    const totalDisk = servers.reduce((sum, server) => sum + server.disk, 0);
+
+    const usableCpu = totalCpu * (cpuThreshold / 100);
+    const usableMemory = totalMemory * (memoryThreshold / 100);
+    const usableDisk = totalDisk * (diskThreshold / 100);
+
+    return {
+      totalCpu,
+      totalMemory,
+      totalDisk,
+      usableCpu,
+      usableMemory,
+      usableDisk
+    };
   };
 
   const calculateRequiredServers = () => {
@@ -177,12 +199,12 @@ const VsanCalculator = () => {
     const totalResources = calculateTotalResources();
     
     // Calculate servers needed for compute
-    const requiredCores = Math.ceil(totalResources.vCPUs / vmCoreRatio);
+    const requiredCores = Math.ceil(totalResources.totalCpu / vmCoreRatio);
     const coresPerServer = selectedProcessor.cores * processorsPerServer;
     const serversForCompute = Math.ceil(requiredCores / coresPerServer);
     
     // Calculate servers needed for storage
-    const totalStorageGB = totalResources.storage;
+    const totalStorageGB = totalResources.totalDisk;
     let usableStoragePerDisk = serverConfig.diskSize;
 
     // Apply vSAN FTT RAID factor
@@ -216,7 +238,7 @@ const VsanCalculator = () => {
     const serverReqs = calculateRequiredServers();
     
     const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
-    const cpuUtilization = (totalResources.vCPUs / (totalAvailableCores * vmCoreRatio)) * 100;
+    const cpuUtilization = (totalResources.usableCpu / (totalAvailableCores * vmCoreRatio)) * 100;
     
     return cpuUtilization;
   };
@@ -225,7 +247,7 @@ const VsanCalculator = () => {
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
     
-    const storageUtilization = (totalResources.storage / (serverReqs.total * serverReqs.storagePerServer)) * 100;
+    const storageUtilization = (totalResources.usableDisk / (serverReqs.total * serverReqs.storagePerServer)) * 100;
     
     return storageUtilization;
   };
@@ -634,20 +656,20 @@ const VsanCalculator = () => {
               
               <div className="bg-slate-700 p-4 rounded-lg">
                 <p className="text-[9px] text-slate-400">Total de vCPUs</p>
-                <p className="text-2xl font-bold">{totalResources.vCPUs}</p>
+                <p className="text-2xl font-bold">{totalResources.totalCpu}</p>
                 <p className="text-[9px] text-slate-400 mt-1">
-                  {(totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 proporção
+                  {(totalResources.usableCpu / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 proporção
                 </p>
               </div>
               
               <div className="bg-slate-700 p-4 rounded-lg">
                 <p className="text-[9px] text-slate-400">Memória Total</p>
-                <p className="text-2xl font-bold">{formatStorage(totalResources.memory)}</p>
+                <p className="text-2xl font-bold">{totalResources.totalMemory} GB</p>
               </div>
               
               <div className="bg-slate-700 p-4 rounded-lg">
                 <p className="text-[9px] text-slate-400">Armazenamento Total</p>
-                <p className="text-2xl font-bold">{formatStorage(totalResources.storage)}</p>
+                <p className="text-2xl font-bold">{totalResources.totalDisk} TB</p>
                 <p className="text-[9px] text-slate-400 mt-1">
                   {formatStorage(serverRequirements.storagePerServer)} por servidor
                 </p>
@@ -772,14 +794,14 @@ const VsanCalculator = () => {
               </div>
             </div>
 
-            {(totalResources.vCPUs) / (serverRequirements.total * selectedProcessor.cores * 2) > vmCoreRatio && (
+            {(totalResources.usableCpu) / (serverRequirements.total * selectedProcessor.cores * 2) > vmCoreRatio && (
               <div className="mt-4 bg-slate-900/50 text-slate-200 p-4 rounded-lg flex items-center gap-2">
                 <AlertTriangle size={20} />
                 <p className="text-[9px]">Warning: vCPU to pCPU ratio exceeds recommended limit!</p>
               </div>
             )}
 
-            {totalResources.storage / serverRequirements.total > serverRequirements.storagePerServer && (
+            {totalResources.usableDisk > serverRequirements.storagePerServer && (
               <div className="mt-4 bg-slate-900/50 text-slate-200 p-4 rounded-lg flex items-center gap-2">
                 <AlertTriangle size={20} />
                 <p className="text-[9px]">Warning: Storage requirements exceed server capacity!</p>
@@ -846,6 +868,72 @@ const VsanCalculator = () => {
                 serverConfig.dataReductionRatio
               ))}
             </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-slate-800/50 p-4 rounded-lg">
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Threshold de CPU (%)
+          </label>
+          <input
+            type="number"
+            value={cpuThreshold}
+            onChange={(e) => setCpuThreshold(Number(e.target.value))}
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            min="0"
+            max="100"
+          />
+        </div>
+        <div className="bg-slate-800/50 p-4 rounded-lg">
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Threshold de Memória (%)
+          </label>
+          <input
+            type="number"
+            value={memoryThreshold}
+            onChange={(e) => setMemoryThreshold(Number(e.target.value))}
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            min="0"
+            max="100"
+          />
+        </div>
+        <div className="bg-slate-800/50 p-4 rounded-lg">
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Threshold de Disco (%)
+          </label>
+          <input
+            type="number"
+            value={diskThreshold}
+            onChange={(e) => setDiskThreshold(Number(e.target.value))}
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            min="0"
+            max="100"
+          />
+        </div>
+      </div>
+
+      <div className="bg-slate-800/50 p-6 rounded-lg">
+        <h3 className="text-lg font-medium text-white mb-4">Recursos Totais</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p className="text-sm text-slate-400">CPU Total</p>
+            <p className="text-xl font-medium text-white">{totalResources.totalCpu} cores</p>
+            <p className="text-sm text-slate-400">CPU Utilizável ({cpuThreshold}%)</p>
+            <p className="text-xl font-medium text-white">{totalResources.usableCpu.toFixed(1)} cores</p>
+          </div>
+          <div>
+            <p className="text-sm text-slate-400">Memória Total</p>
+            <p className="text-xl font-medium text-white">{totalResources.totalMemory} GB</p>
+            <p className="text-sm text-slate-400">Memória Utilizável ({memoryThreshold}%)</p>
+            <p className="text-xl font-medium text-white">{totalResources.usableMemory.toFixed(1)} GB</p>
+          </div>
+          <div>
+            <p className="text-sm text-slate-400">Disco Total</p>
+            <p className="text-xl font-medium text-white">{totalResources.totalDisk} TB</p>
+            <p className="text-sm text-slate-400">Disco Utilizável ({diskThreshold}%)</p>
+            <p className="text-xl font-medium text-white">{totalResources.usableDisk.toFixed(1)} TB</p>
           </div>
         </div>
       </div>

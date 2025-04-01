@@ -7,7 +7,7 @@ import StorageCalculator from './components/StorageCalculator'
 import VsanCalculator from './components/VsanCalculator'
 import BackupCalculator from './components/BackupCalculator'
 import Header from './components/Header'
-import { Desktop, Cpu, HardDrive, Globe, Database, ArrowRight } from 'phosphor-react'
+import { Desktop, Cpu, HardDrive, Globe, Database, ArrowRight, Server, Network, Cloud, Shield, Lock, ChartLine, Users, Rocket } from 'phosphor-react'
 import { auth0Config } from './auth0-config'
 
 function AppContent() {
@@ -23,6 +23,20 @@ function AppContent() {
           </header>
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
             <div className="max-w-3xl mx-auto text-center animate-slide-up">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="p-4 bg-slate-800/50 rounded-lg animate-float">
+                  <Server size={32} className="mx-auto text-blue-400" />
+                </div>
+                <div className="p-4 bg-slate-800/50 rounded-lg animate-float-delayed">
+                  <Network size={32} className="mx-auto text-blue-400" />
+                </div>
+                <div className="p-4 bg-slate-800/50 rounded-lg animate-float-more-delayed">
+                  <Cloud size={32} className="mx-auto text-blue-400" />
+                </div>
+                <div className="p-4 bg-slate-800/50 rounded-lg animate-float-most-delayed">
+                  <Database size={32} className="mx-auto text-blue-400" />
+                </div>
+              </div>
               <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
                 Transforme suas ideias em Infraestrutura
               </h2>
@@ -30,12 +44,26 @@ function AppContent() {
                 Nossa ferramenta foi desenvolvida para apoiar Pre sales e Arquitetos de Soluções com estimativas precisas de sizing. 
                 Simplifique seus cálculos e tome decisões mais informadas para seus projetos.
               </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="p-4 bg-slate-800/30 rounded-lg">
+                  <Shield size={24} className="mx-auto text-blue-400 mb-2" />
+                  <p className="text-sm text-slate-300">Segurança Garantida</p>
+                </div>
+                <div className="p-4 bg-slate-800/30 rounded-lg">
+                  <ChartLine size={24} className="mx-auto text-blue-400 mb-2" />
+                  <p className="text-sm text-slate-300">Cálculos Precisos</p>
+                </div>
+                <div className="p-4 bg-slate-800/30 rounded-lg">
+                  <Users size={24} className="mx-auto text-blue-400 mb-2" />
+                  <p className="text-sm text-slate-300">Para Profissionais</p>
+                </div>
+              </div>
               <div className="space-y-4">
                 <button 
                   onClick={() => loginWithRedirect()} 
                   className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center gap-2 mx-auto animate-pulse"
                 >
-                  Começar Agora
+                  Login
                   <ArrowRight size={20} />
                 </button>
                 <p className="text-slate-400 text-sm">
