@@ -7,7 +7,7 @@ import StorageCalculator from './components/StorageCalculator'
 import VsanCalculator from './components/VsanCalculator'
 import BackupCalculator from './components/BackupCalculator'
 import Header from './components/Header'
-import { Desktop, Cpu, HardDrive, Globe, Database, ArrowRight, ChartLine, Users, Shield } from 'phosphor-react'
+import { Desktop, Cpu, HardDrive, Globe, Database, ArrowRight, ChartLine, Users, Shield, SignOut, SignIn } from 'phosphor-react'
 import { auth0Config } from './auth0-config'
 
 function AppContent() {
@@ -19,55 +19,59 @@ function AppContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-950 text-white">
         <div className="container mx-auto px-4 py-6">
           <header className="flex justify-between items-center mb-12 animate-fade-in">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">InfiniSizing</h1>
+            <div className="flex items-center gap-2">
+              <Database size={32} className="text-blue-400" />
+              <h1 className="text-2xl font-bold">Data Center Calculator</h1>
+            </div>
+            <button
+              onClick={() => logout()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            >
+              <SignOut size={16} />
+              Logout
+            </button>
           </header>
-          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-            <div className="max-w-3xl mx-auto text-center animate-slide-up">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="p-4 bg-blue-800/30 rounded-lg animate-float">
-                  <Desktop size={32} className="mx-auto text-red-400" />
-                </div>
-                <div className="p-4 bg-blue-800/30 rounded-lg animate-float-delayed">
-                  <Globe size={32} className="mx-auto text-red-400" />
-                </div>
-                <div className="p-4 bg-blue-800/30 rounded-lg animate-float-more-delayed">
-                  <Database size={32} className="mx-auto text-red-400" />
-                </div>
-                <div className="p-4 bg-blue-800/30 rounded-lg animate-float-most-delayed">
-                  <HardDrive size={32} className="mx-auto text-red-400" />
-                </div>
+
+          <div className="max-w-3xl mx-auto text-center animate-slide-up">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="p-4 bg-blue-800/30 rounded-lg animate-float">
+                <Desktop size={32} className="mx-auto text-blue-400" />
               </div>
-              <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
-                Transforme suas ideias em Infraestrutura
-              </h2>
-              <p className="text-slate-300 text-lg mb-8 leading-relaxed">
-                Nossa ferramenta foi desenvolvida para apoiar Pre sales e Arquitetos de Soluções com estimativas precisas de sizing. 
-                Simplifique seus cálculos e tome decisões mais informadas para seus projetos.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="p-4 bg-blue-800/30 rounded-lg">
-                  <Shield size={24} className="mx-auto text-red-400 mb-2" />
-                </div>
-                <div className="p-4 bg-blue-800/30 rounded-lg">
-                  <ChartLine size={24} className="mx-auto text-red-400 mb-2" />
-                </div>
-                <div className="p-4 bg-blue-800/30 rounded-lg">
-                  <Users size={24} className="mx-auto text-red-400 mb-2" />
-                </div>
+              <div className="p-4 bg-blue-800/30 rounded-lg animate-float-delayed">
+                <Globe size={32} className="mx-auto text-blue-400" />
               </div>
-              <div className="space-y-4">
-                <button 
-                  onClick={() => loginWithRedirect()} 
-                  className="px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-red-500/30 flex items-center gap-2 mx-auto animate-pulse"
-                >
-                  Login
-                  <ArrowRight size={20} />
-                </button>
-                <p className="text-slate-400 text-sm">
-                  Acesso seguro e gratuito para profissionais de TI
-                </p>
+              <div className="p-4 bg-blue-800/30 rounded-lg animate-float-more-delayed">
+                <Database size={32} className="mx-auto text-blue-400" />
+              </div>
+              <div className="p-4 bg-blue-800/30 rounded-lg animate-float-most-delayed">
+                <HardDrive size={32} className="mx-auto text-blue-400" />
               </div>
             </div>
+
+            <h2 className="text-4xl font-bold mb-6">Bem-vindo ao Data Center Calculator</h2>
+            <p className="text-lg text-slate-300 mb-8">
+              Calcule e otimize seus recursos de data center com precisão
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="p-4 bg-blue-800/30 rounded-lg">
+                <Shield size={24} className="mx-auto text-blue-400 mb-2" />
+              </div>
+              <div className="p-4 bg-blue-800/30 rounded-lg">
+                <ChartLine size={24} className="mx-auto text-blue-400 mb-2" />
+              </div>
+              <div className="p-4 bg-blue-800/30 rounded-lg">
+                <Users size={24} className="mx-auto text-blue-400 mb-2" />
+              </div>
+            </div>
+
+            <button
+              onClick={() => loginWithRedirect()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium flex items-center gap-2 mx-auto transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+            >
+              <SignIn size={24} />
+              Login
+            </button>
           </div>
         </div>
       </div>
