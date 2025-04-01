@@ -47,7 +47,7 @@ function AppContent() {
           </div>
           <div className="auth-buttons">
             <div className="user-info">
-              <span>Bem-vindo, {user?.name}</span>
+              <span className="welcome-text">Bem Vindo ao InfiniSizing</span>
               <button onClick={() => logout()} className="logout-button">
                 Logout
               </button>
