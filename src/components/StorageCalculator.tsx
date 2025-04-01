@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { HardDrive, Database, Download, Activity } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -50,19 +49,19 @@ const DISK_SIZES = [
   480,      // 480 GB
   960,      // 960 GB
   1920,     // 1.92 TB
-  2048,     // 2 TB
+  2000,     // 2 TB
   3840,     // 3.84 TB
-  4096,     // 4 TB
-  6144,     // 6 TB
+  4000,     // 4 TB
+  6000,     // 6 TB
   7680,     // 7.68 TB
-  8192,     // 8 TB
-  10240,    // 10 TB
-  12288,    // 12 TB
-  14336,    // 14 TB
+  8000,     // 8 TB
+  10000,    // 10 TB
+  12000,    // 12 TB
+  14000,    // 14 TB
   15360,    // 15.36 TB
-  16384,    // 16 TB
-  18432,    // 18 TB
-  20480,    // 20 TB
+  16000,    // 16 TB
+  18000,    // 18 TB
+  20000,    // 20 TB
   22000,    // 22 TB
   24000,    // 24 TB
 ];
@@ -134,9 +133,9 @@ const calculatePerformanceMetrics = (config: StorageConfig): PerformanceMetrics 
   // Calculate total IOPS based on number of disks and RAID configuration
   const totalIOPS = baseIOPS * config.numberOfDisks * raidFactor * workloadFactor;
   
-  // Calculate read/write IOPS based on percentage and RAID type
-  const readIOPS = totalIOPS * (config.readPercentage / 100) * (config.raidType === 'RAID 1' ? 1.2 : 1.0);
-  const writeIOPS = totalIOPS * ((100 - config.readPercentage) / 100) * (config.raidType === 'RAID 5' ? 0.8 : 1.0);
+  // Calculate read/write IOPS based on percentage
+  const readIOPS = totalIOPS * (config.readPercentage / 100);
+  const writeIOPS = totalIOPS * ((100 - config.readPercentage) / 100);
   
   // Calculate throughput in MB/s
   const readThroughput = (readIOPS * config.blockSize) / 1024;
@@ -156,10 +155,10 @@ const calculatePerformanceMetrics = (config: StorageConfig): PerformanceMetrics 
   
   return {
     iops: {
-      total: readIOPS + writeIOPS,
+      total: totalIOPS,
       read: readIOPS,
       write: writeIOPS,
-      perGB: (readIOPS + writeIOPS) / (config.diskSize * config.numberOfDisks)
+      perGB: totalIOPS / (config.diskSize * config.numberOfDisks)
     },
     throughput: {
       read: readThroughput,
@@ -209,7 +208,7 @@ const Gauge: React.FC<GaugeProps> = ({ value, max, label, unit, color, size = 20
       </svg>
       <div className="mt-4 text-center">
         <div className="text-2xl font-bold">
-          {formatStorage(value)} {unit}
+          {value.toLocaleString()} {unit}
         </div>
         <div className="text-sm text-slate-400">{label}</div>
       </div>
@@ -254,8 +253,7 @@ const StorageCalculator = () => {
 
   const calculateUsableCapacity = () => {
     const rawCapacity = calculateRawCapacity();
-    const raidFactor = RAID_FACTORS[config.raidType];
-    return Math.round(rawCapacity * raidFactor);
+    return rawCapacity * RAID_FACTORS[config.raidType];
   };
 
   const exportReport = async () => {
@@ -363,8 +361,8 @@ const StorageCalculator = () => {
                     size={180}
                   />
                   <div className="mt-4 text-sm text-slate-400">
-                    <div>Leitura: {Math.round(performanceMetrics.iops.read).toLocaleString()} IOPS ({config.readPercentage}%)</div>
-                    <div>Escrita: {Math.round(performanceMetrics.iops.write).toLocaleString()} IOPS ({100 - config.readPercentage}%)</div>
+                    <div>Leitura: {Math.round(performanceMetrics.iops.read).toLocaleString()} IOPS</div>
+                    <div>Escrita: {Math.round(performanceMetrics.iops.write).toLocaleString()} IOPS</div>
                     <div className="mt-2">Total: {Math.round(performanceMetrics.iops.total).toLocaleString()} IOPS</div>
                   </div>
                 </div>
@@ -476,10 +474,10 @@ const StorageCalculator = () => {
                 onChange={(e) => setConfig({ ...config, raidType: e.target.value as StorageConfig['raidType'] })}
                 className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
               >
-                <option value="RAID 1">RAID-1 (Espelhamento)</option>
-                <option value="RAID 5">RAID-5 (Paridade Simples)</option>
-                <option value="RAID 6">RAID-6 (Paridade Dupla)</option>
-                <option value="RAID 10">RAID-10 (Espelhamento + Distribuição)</option>
+                <option value="RAID1">RAID-1 (Espelhamento)</option>
+                <option value="RAID5">RAID-5 (Paridade Simples)</option>
+                <option value="RAID6">RAID-6 (Paridade Dupla)</option>
+                <option value="RAID10">RAID-10 (Espelhamento + Distribuição)</option>
               </select>
             </div>
 
@@ -523,9 +521,9 @@ const StorageCalculator = () => {
                 onChange={(e) => setConfig({ ...config, workloadType: e.target.value as StorageConfig['workloadType'] })}
                 className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
               >
-                <option value="random_read">Leitura Aleatória</option>
-                <option value="sequential_write">Escrita Sequencial</option>
-                <option value="mixed">Carga Mista</option>
+                <option value="OLTP">OLTP (Transacional)</option>
+                <option value="OLAP">OLAP (Analítico)</option>
+                <option value="Mixed">Mista</option>
               </select>
             </div>
 
@@ -539,8 +537,8 @@ const StorageCalculator = () => {
                   value={config.readPercentage}
                   onChange={(e) => setConfig({ ...config, readPercentage: Number(e.target.value) })}
                   className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                  min="0"
-                  max="100"
+                min="0"
+                max="100"
                   step="1"
                 />
                 <span className="text-sm text-slate-300 min-w-[4rem] text-right">
@@ -584,8 +582,8 @@ const StorageCalculator = () => {
               <div className="space-y-2 text-sm text-slate-400">
                 <p>RAID 1: 50% de capacidade utilizável (espelhamento)</p>
                 <p>RAID 5: 75% de capacidade utilizável (paridade simples)</p>
-                <p>RAID 6: 67% de capacidade utilizável (dupla paridade)</p>
-                <p>RAID 10: 50% de capacidade utilizável (espelhamento + striping)</p>
+                <p>RAID 6: 67% de capacidade utilizável (paridade dupla)</p>
+                <p>RAID 10: 50% de capacidade utilizável (espelhamento + distribuição)</p>
               </div>
             </div>
           </div>
