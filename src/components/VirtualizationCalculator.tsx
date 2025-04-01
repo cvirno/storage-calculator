@@ -332,7 +332,7 @@ const VirtualizationCalculator = () => {
         <div className="sticky top-2">
           <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">VM Configuration</h2>
+              <h2 className="text-xl font-semibold">Gerenciamento de VMs</h2>
               <button
                 onClick={resetAllData}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
@@ -362,20 +362,20 @@ const VirtualizationCalculator = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        VM Name
+                        Nome da VM
                       </label>
                       <input
                         type="text"
                         value={vm.name}
                         onChange={(e) => updateVM(index, 'name', e.target.value)}
                         className="w-full bg-slate-600 rounded-lg px-4 py-2 text-white"
-                        placeholder="Enter VM name"
+                        placeholder="Digite o nome da VM"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Number of VMs
+                        Quantidade
                       </label>
                       <input
                         type="number"
@@ -388,7 +388,7 @@ const VirtualizationCalculator = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        vCPUs
+                        Número de vCPUs
                       </label>
                       <input
                         type="number"
@@ -401,7 +401,7 @@ const VirtualizationCalculator = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Memory (GB)
+                        Memória (GB)
                       </label>
                       <input
                         type="number"
@@ -414,7 +414,7 @@ const VirtualizationCalculator = () => {
 
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Storage (GB)
+                        Armazenamento (GB)
                       </label>
                       <input
                         type="number"
@@ -440,7 +440,7 @@ const VirtualizationCalculator = () => {
                 onClick={addVM}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors"
               >
-                Add Another VM Configuration
+                Adicionar Outra Configuração de VM
               </button>
 
               <div className="space-y-4">
@@ -628,30 +628,30 @@ const VirtualizationCalculator = () => {
         <div className="sticky top-2 space-y-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-              <div className="text-sm text-slate-400 mb-1">Required Servers</div>
+              <div className="text-sm text-slate-400 mb-1">Servidores Necessários</div>
               <div className="text-2xl font-bold">
                 {serverRequirements.total}{considerNPlusOne && serverRequirements.total > 0 ? ' (+1)' : ''}
               </div>
               <div className="text-sm text-slate-400">
-                <p>Compute: {serverRequirements.forCompute}</p>
-                <p>Memory: {serverRequirements.forMemory}</p>
-                <p>Storage: {serverRequirements.forStorage}</p>
+                <p>Computação: {serverRequirements.forCompute}</p>
+                <p>Memória: {serverRequirements.forMemory}</p>
+                <p>Armazenamento: {serverRequirements.forStorage}</p>
               </div>
             </div>
             
             <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-              <div className="text-sm text-slate-400 mb-1">Total vCPUs</div>
+              <div className="text-sm text-slate-400 mb-1">Total de vCPUs</div>
               <div className="text-2xl font-bold">{totalResources.vCPUs}</div>
               <div className="text-sm text-slate-400">
-                {(totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 ratio
+                {(totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 proporção
               </div>
             </div>
             
             <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-              <div className="text-sm text-slate-400 mb-1">Total Memory</div>
+              <div className="text-sm text-slate-400 mb-1">Memória Total</div>
               <div className="text-2xl font-bold">{formatStorage(totalResources.memory)}</div>
               <div className="text-sm text-slate-400">
-                {formatStorage(serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer)} per server
+                {formatStorage(serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer)} por servidor
               </div>
             </div>
             

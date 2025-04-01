@@ -324,10 +324,10 @@ const VsanCalculator = () => {
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-slate-800 p-6 rounded-xl shadow-xl">
-          <h2 className="text-xl font-semibold mb-6">VM Configuration</h2>
+          <h2 className="text-xl font-semibold mb-6">Configuração VM</h2>
           
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">VM Configuration</h2>
+            <h2 className="text-xl font-semibold">Configuração VM</h2>
             <button
               onClick={resetAllData}
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
@@ -572,12 +572,12 @@ const VsanCalculator = () => {
 
             <div>
               <label className="block text-[9px] font-medium text-slate-300 mb-1">
-                vSAN Configuration
+                Configuração vSAN
               </label>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[8px] font-medium text-slate-400 mb-1">
-                    Failures to Tolerate (FTT)
+                    Falhas a Tolerar (FTT)
                   </label>
                   <select
                     value={serverConfig.ftt}
@@ -590,15 +590,15 @@ const VsanCalculator = () => {
                 </div>
                 <div>
                   <label className="block text-[8px] font-medium text-slate-400 mb-1">
-                    RAID Type
+                    Tipo de RAID
                   </label>
                   <select
                     value={serverConfig.raidType}
                     onChange={(e) => setServerConfig({ ...serverConfig, raidType: e.target.value as ServerConfig['raidType'] })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-[10px]"
                   >
-                    <option value="RAID1">RAID-1 (Mirroring)</option>
-                    <option value="RAID5">RAID-5 (Erasure Coding)</option>
+                    <option value="RAID1">RAID-1 (Espelhamento)</option>
+                    <option value="RAID5">RAID-5 (Codificação de Eliminação)</option>
                   </select>
                 </div>
                 <div>
@@ -645,38 +645,38 @@ const VsanCalculator = () => {
 
         <div className="space-y-8">
           <div className="bg-slate-800 p-6 rounded-xl shadow-xl">
-            <h2 className="text-xl font-semibold mb-6">Resource Requirements</h2>
+            <h2 className="text-xl font-semibold mb-6">Requisitos de Recursos</h2>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-[9px] text-slate-400">Required Servers</p>
+                <p className="text-[9px] text-slate-400">Servidores Necessários</p>
                 <p className="text-2xl font-bold">{serverRequirements.total}</p>
                 <div className="text-[9px] text-slate-400 mt-1">
-                  <p>Compute: {serverRequirements.forCompute}</p>
-                  <p>Storage: {serverRequirements.forStorage}</p>
-                  <p>Memory: {serverRequirements.forMemory}</p>
-                  {considerNPlusOne && <p>Includes N+1 redundancy</p>}
+                  <p>Computação: {serverRequirements.forCompute}</p>
+                  <p>Armazenamento: {serverRequirements.forStorage}</p>
+                  <p>Memória: {serverRequirements.forMemory}</p>
+                  {considerNPlusOne && <p>Inclui redundância N+1</p>}
                 </div>
               </div>
               
               <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-[9px] text-slate-400">Total vCPUs</p>
+                <p className="text-[9px] text-slate-400">Total de vCPUs</p>
                 <p className="text-2xl font-bold">{totalResources.vCPUs}</p>
                 <p className="text-[9px] text-slate-400 mt-1">
-                  {(totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 ratio
+                  {(totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 proporção
                 </p>
               </div>
               
               <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-[9px] text-slate-400">Total Memory</p>
+                <p className="text-[9px] text-slate-400">Memória Total</p>
                 <p className="text-2xl font-bold">{formatStorage(totalResources.memory)}</p>
               </div>
               
               <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-[9px] text-slate-400">Total Storage</p>
+                <p className="text-[9px] text-slate-400">Armazenamento Total</p>
                 <p className="text-2xl font-bold">{formatStorage(totalResources.storage)}</p>
                 <p className="text-[9px] text-slate-400 mt-1">
-                  {formatStorage(serverRequirements.storagePerServer)} per server
+                  {formatStorage(serverRequirements.storagePerServer)} por servidor
                 </p>
               </div>
             </div>
@@ -909,19 +909,19 @@ const VsanCalculator = () => {
         <h2 className="text-xl font-bold text-white mb-4">Storage Metrics</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-slate-800 p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-slate-400">Total Raw Storage</h3>
+            <h3 className="text-sm font-medium text-slate-400">Armazenamento Bruto Total</h3>
             <p className="text-2xl font-bold text-white">
               {formatStorage(calculateTotalRawStorage())}
             </p>
           </div>
           <div className="bg-slate-800 p-4 rounded-lg relative group">
             <h3 className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              Net Usable Storage
+              Armazenamento Líquido Utilizável
               <span className="cursor-help">
                 <AlertCircle size={14} className="text-slate-500" />
                 <div className="absolute hidden group-hover:block bg-slate-700 p-2 rounded text-xs w-48 top-full left-0 mt-1 z-10">
-                  Net storage considers FTT overhead and data reduction ratio.
-                  Formula: Raw / (FTT + 1) × Data Reduction
+                  O armazenamento líquido considera o overhead do FTT e a taxa de redução de dados.
+                  Fórmula: Bruto / (FTT + 1) × Taxa de Redução
                 </div>
               </span>
             </h3>

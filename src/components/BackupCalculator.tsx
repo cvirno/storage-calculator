@@ -72,10 +72,10 @@ const BackupCalculator = () => {
 
     // Calculate storage by retention periods with compression
     const storageByRetention = [
-      { name: 'Daily', value: dailyBackupSize },
-      { name: 'Weekly', value: dailyBackupSize * 7 },
-      { name: 'Monthly', value: dailyBackupSize * 30 },
-      { name: 'Yearly', value: dailyBackupSize * 365 }
+      { name: 'Diário', value: dailyBackupSize },
+      { name: 'Semanal', value: dailyBackupSize * 7 },
+      { name: 'Mensal', value: dailyBackupSize * 30 },
+      { name: 'Anual', value: dailyBackupSize * 365 }
     ];
 
     // Generate backup timeline with cumulative growth
@@ -101,7 +101,7 @@ const BackupCalculator = () => {
       storageDetails: {
         raw: rawBackupSize,
         compressed: compressedSize,
-        withRetention: withRetention,
+        withRetention,
         projected: projectedSize
       }
     });
@@ -132,7 +132,7 @@ const BackupCalculator = () => {
             <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
                 <Database size={20} />
-                <span>Daily Backup</span>
+                <span>Tamanho do Backup Diário</span>
               </div>
               <div className="text-2xl font-bold">{formatStorage(metrics.dailyBackupSize)}</div>
             </div>
@@ -140,7 +140,7 @@ const BackupCalculator = () => {
             <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
                 <HardDrive size={20} />
-                <span>Total Storage</span>
+                <span>Armazenamento Total</span>
               </div>
               <div className="text-2xl font-bold">{formatStorage(metrics.totalBackupSize)}</div>
             </div>
@@ -148,7 +148,7 @@ const BackupCalculator = () => {
             <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
                 <Clock size={20} />
-                <span>Retention Days</span>
+                <span>Dias de Retenção</span>
               </div>
               <div className="text-2xl font-bold">{retentionPeriod}</div>
             </div>
@@ -156,7 +156,7 @@ const BackupCalculator = () => {
             <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
                 <TrendingUp size={20} />
-                <span>Annual Growth</span>
+                <span>Crescimento Anual</span>
               </div>
               <div className="text-2xl font-bold">{annualGrowth}%</div>
             </div>
@@ -164,7 +164,7 @@ const BackupCalculator = () => {
 
           <div className="mt-8 bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Storage Growth Analysis</h2>
+              <h2 className="text-xl font-semibold">Análise de Crescimento do Armazenamento</h2>
               <button
                 onClick={resetAllData}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
@@ -266,7 +266,7 @@ const BackupCalculator = () => {
           </div>
 
           <div className="mt-8 bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-            <h2 className="text-xl font-semibold mb-6">Storage Distribution</h2>
+            <h2 className="text-xl font-semibold mb-6">Distribuição de Armazenamento</h2>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -318,27 +318,27 @@ const BackupCalculator = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-blue-500"></div>
                   <div>
-                    <p className="text-sm text-slate-400">Raw Storage</p>
+                    <p className="text-sm text-slate-400">Armazenamento Bruto</p>
                     <p className="text-lg font-semibold">{formatStorage(metrics.storageDetails.raw)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
                   <div>
-                    <p className="text-sm text-slate-400">Compressed</p>
+                    <p className="text-sm text-slate-400">Armazenamento Comprimido</p>
                     <p className="text-lg font-semibold">{formatStorage(metrics.storageDetails.compressed)}</p>
                     <p className="text-xs text-slate-500">
-                      {((1 - compressionRatio) * 100).toFixed(0)}% reduction
+                      {((1 - compressionRatio) * 100).toFixed(0)}% redução
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-amber-500"></div>
                   <div>
-                    <p className="text-sm text-slate-400">With Retention</p>
+                    <p className="text-sm text-slate-400">Armazenamento com Retenção</p>
                     <p className="text-lg font-semibold">{formatStorage(metrics.storageDetails.withRetention)}</p>
                     <p className="text-xs text-slate-500">
-                      {retentionPeriod} days retention
+                      {retentionPeriod} dias de retenção
                     </p>
                   </div>
                 </div>
@@ -348,143 +348,159 @@ const BackupCalculator = () => {
         </div>
 
         <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-          <h2 className="text-xl font-semibold mb-6">Backup Parameters</h2>
+          <h2 className="text-xl font-semibold mb-6">Parâmetros de Backup</h2>
           
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Original Data Size (TB)
-              </label>
-              <input
-                type="number"
-                value={originalData}
-                onChange={(e) => setOriginalData(Number(e.target.value))}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="0"
-                step="0.1"
-              />
-            </div>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-400">
+                  Frequência de Backup (por dia)
+                </label>
+                <input
+                  type="number"
+                  value={backupFrequency}
+                  onChange={(e) => setBackupFrequency(Number(e.target.value))}
+                  min="1"
+                  max="24"
+                  className="w-full bg-slate-800/50 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Backup Frequency (per day)
-              </label>
-              <input
-                type="number"
-                value={backupFrequency}
-                onChange={(e) => setBackupFrequency(Number(e.target.value))}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="1"
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-400">
+                  Período de Retenção (dias)
+                </label>
+                <input
+                  type="number"
+                  value={retentionPeriod}
+                  onChange={(e) => setRetentionPeriod(Number(e.target.value))}
+                  min="1"
+                  max="365"
+                  className="w-full bg-slate-800/50 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Retention Period (days)
-              </label>
-              <input
-                type="number"
-                value={retentionPeriod}
-                onChange={(e) => setRetentionPeriod(Number(e.target.value))}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="1"
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-400">
+                  Taxa de Compressão
+                </label>
+                <input
+                  type="number"
+                  value={compressionRatio}
+                  onChange={(e) => setCompressionRatio(Number(e.target.value))}
+                  min="0.1"
+                  max="1"
+                  step="0.1"
+                  className="w-full bg-slate-800/50 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Compression Ratio
-              </label>
-              <input
-                type="number"
-                value={compressionRatio}
-                onChange={(e) => setCompressionRatio(Number(e.target.value))}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="0"
-                max="1"
-                step="0.1"
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-400">
+                  Taxa de Alteração (%)
+                </label>
+                <input
+                  type="number"
+                  value={changeRate}
+                  onChange={(e) => setChangeRate(Number(e.target.value))}
+                  min="1"
+                  max="100"
+                  className="w-full bg-slate-800/50 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Data Change Rate (%)
-              </label>
-              <input
-                type="number"
-                value={changeRate}
-                onChange={(e) => setChangeRate(Number(e.target.value))}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="0"
-                max="100"
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-400">
+                  Crescimento Anual (%)
+                </label>
+                <input
+                  type="number"
+                  value={annualGrowth}
+                  onChange={(e) => setAnnualGrowth(Number(e.target.value))}
+                  min="0"
+                  max="100"
+                  className="w-full bg-slate-800/50 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Annual Growth Rate (%)
-              </label>
-              <input
-                type="number"
-                value={annualGrowth}
-                onChange={(e) => setAnnualGrowth(Number(e.target.value))}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Forecast Period (years)
-              </label>
-              <input
-                type="number"
-                value={years}
-                onChange={(e) => setYears(Number(e.target.value))}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="1"
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-400">
+                  Anos de Projeção
+                </label>
+                <input
+                  type="number"
+                  value={years}
+                  onChange={(e) => setYears(Number(e.target.value))}
+                  min="1"
+                  max="10"
+                  className="w-full bg-slate-800/50 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-        <h2 className="text-xl font-semibold mb-6">Backup Size Timeline</h2>
-        <div className="h-[250px]">
+        <h2 className="text-xl font-semibold mb-6">Linha do Tempo do Backup</h2>
+        <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={metrics.backupTimeline}>
-              <defs>
-                <linearGradient id="colorTimeline" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <XAxis 
-                dataKey="day" 
-                stroke="#94A3B8"
-                tick={{ fill: '#94A3B8' }}
+              <XAxis
+                dataKey="day"
+                stroke="#94a3b8"
+                fontSize={12}
+                tickFormatter={(value) => `Dia ${value}`}
               />
-              <YAxis 
-                stroke="#94A3B8"
-                tick={{ fill: '#94A3B8' }}
+              <YAxis
+                stroke="#94a3b8"
+                fontSize={12}
+                tickFormatter={(value) => formatStorage(value)}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1E293B',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#E2E8F0'
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length && payload[0].value !== undefined) {
+                    return (
+                      <div className="bg-slate-800 p-4 rounded-lg shadow-lg border border-slate-700">
+                        <p className="text-sm text-slate-400">
+                          Dia {payload[0].payload.day}
+                        </p>
+                        <p className="text-lg font-semibold text-white">
+                          {formatStorage(payload[0].value as number)}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
                 }}
-                formatter={(value: number) => formatStorage(value)}
               />
-              <Bar
-                dataKey="size"
-                fill="url(#colorTimeline)"
-                radius={[4, 4, 0, 0]}
-              />
+              <Bar dataKey="size" fill="#3b82f6" />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
+        <h2 className="text-xl font-semibold mb-6">Detalhes do Armazenamento</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-slate-800/50 p-6 rounded-xl">
+            <h3 className="text-lg font-medium mb-2">Armazenamento Bruto</h3>
+            <p className="text-lg font-semibold">{formatStorage(metrics.storageDetails.raw)}</p>
+            <p className="text-sm text-slate-400">Sem compressão</p>
+          </div>
+
+          <div className="bg-slate-800/50 p-6 rounded-xl">
+            <h3 className="text-lg font-medium mb-2">Armazenamento Comprimido</h3>
+            <p className="text-lg font-semibold">{formatStorage(metrics.storageDetails.compressed)}</p>
+            <p className="text-sm text-slate-400">Com taxa de compressão</p>
+          </div>
+
+          <div className="bg-slate-800/50 p-6 rounded-xl">
+            <h3 className="text-lg font-medium mb-2">Armazenamento com Retenção</h3>
+            <p className="text-lg font-semibold">{formatStorage(metrics.storageDetails.withRetention)}</p>
+            <p className="text-sm text-slate-400">Com período de retenção</p>
+          </div>
         </div>
       </div>
     </div>

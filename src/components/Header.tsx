@@ -9,8 +9,8 @@ const Header = () => {
           <div className="flex items-center gap-2">
             <Database size={20} className="text-blue-500" />
             <div>
-              <h1 className="text-base font-bold text-white">Private Cloud Sizing</h1>
-              <p className="text-xs text-slate-400">by Cesar Virno</p>
+              <h1 className="text-base font-bold text-white">InfiniSizing</h1>
+              <p className="text-xs text-slate-400">por Cesar Virno</p>
             </div>
           </div>
           

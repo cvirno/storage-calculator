@@ -164,19 +164,19 @@ const RackVisualization: React.FC<RackVisualizationProps> = ({ servers, view }) 
         <div className="bg-slate-800/50 p-4 rounded-xl">
           <div className="flex items-center gap-2 text-slate-400 mb-1">
             <ServerIcon size={16} />
-            <span className="text-sm">Total Servers</span>
+            <span className="text-sm">Total de Servidores</span>
           </div>
           <div className="text-2xl font-bold">{servers.length}</div>
-          <div className="text-sm text-slate-400 mt-1">Units: {usedUnits}U</div>
+          <div className="text-sm text-slate-400 mt-1">Unidades: {usedUnits}U</div>
         </div>
 
         <div className="bg-slate-800/50 p-4 rounded-xl">
           <div className="flex items-center gap-2 text-slate-400 mb-1">
             <Cpu size={16} />
-            <span className="text-sm">Total Processors</span>
+            <span className="text-sm">CPUs Físicas</span>
           </div>
           <div className="text-2xl font-bold">{totalProcessors}</div>
-          <div className="text-sm text-slate-400 mt-1">Physical CPUs</div>
+          <div className="text-sm text-slate-400 mt-1">Núcleos Físicos: {totalCores}</div>
         </div>
 
         <div className="bg-slate-800/50 p-4 rounded-xl">
@@ -223,11 +223,11 @@ const RackVisualization: React.FC<RackVisualizationProps> = ({ servers, view }) 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-sm bg-blue-900/30 border border-blue-700/50"></div>
-                <span className="text-xs text-slate-400">1U Server</span>
+                <span className="text-xs text-slate-400">Servidor 1U</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-sm bg-purple-900/30 border border-purple-700/50"></div>
-                <span className="text-xs text-slate-400">2U Server</span>
+                <span className="text-xs text-slate-400">Servidor 2U</span>
               </div>
             </div>
           </div>

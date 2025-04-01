@@ -29,7 +29,7 @@ function AppContent() {
               </p>
               <p className="mt-6 text-slate-400 text-2xl font-medium">Por favor, faça login para acessar o Sizing</p>
               <button onClick={() => loginWithRedirect()} className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium">
-                Login
+                Entrar
               </button>
             </div>
           </div>
@@ -55,7 +55,7 @@ function AppContent() {
               <div className="user-info">
                 <span className="welcome-text">Bem Vindo ao InfiniSizing</span>
                 <button onClick={() => logout()} className="logout-button">
-                  Logout
+                  Sair
                 </button>
               </div>
             )}
@@ -66,25 +66,25 @@ function AppContent() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={() => setActiveTab('physical')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-base font-medium transition-all duration-300 transform hover:scale-105 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'physical'
-                ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
-                : 'bg-slate-800/50 hover:bg-slate-700/50'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Desktop size={20} />
-            Physical Servers
+            Servidores Físicos
           </button>
           <button
             onClick={() => setActiveTab('virtual')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-base font-medium transition-all duration-300 transform hover:scale-105 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'virtual'
-                ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
-                : 'bg-slate-800/50 hover:bg-slate-700/50'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Cpu size={20} />
-            Virtualization
+            Virtualização
           </button>
           <button
             onClick={() => setActiveTab('storage')}
@@ -95,7 +95,7 @@ function AppContent() {
             }`}
           >
             <HardDrive size={20} />
-            Storage
+            Armazenamento
           </button>
           <button
             onClick={() => setActiveTab('vsan')}

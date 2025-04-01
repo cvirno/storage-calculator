@@ -280,7 +280,7 @@ const StorageCalculator = () => {
   return (
     <div className="space-y-8" id="storage-report">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Storage Calculator</h2>
+        <h2 className="text-2xl font-bold">Calculadora de Armazenamento</h2>
         <div className="flex gap-4">
           <button
             onClick={resetAllData}
@@ -291,13 +291,13 @@ const StorageCalculator = () => {
             </svg>
             Reset All
           </button>
-        <button
-          onClick={exportReport}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex items-center gap-2"
-        >
-          <Download size={20} />
-          Export Report
-        </button>
+          <button
+            onClick={exportReport}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex items-center gap-2"
+          >
+            <Download size={20} />
+            Exportar PDF
+          </button>
         </div>
       </div>
 
@@ -307,122 +307,124 @@ const StorageCalculator = () => {
             <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
                 <HardDrive size={20} />
-                <span>Raw Capacity</span>
+                <span>Armazenamento Total</span>
               </div>
               <div className="text-2xl font-bold">{formatStorage(calculateRawCapacity())}</div>
-              <div className="text-sm text-slate-400 mt-1">
-                Total Storage
-              </div>
+              <div className="text-sm text-slate-400">Armazenamento Total</div>
             </div>
 
             <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
                 <Database size={20} />
-                <span>Usable Capacity</span>
+                <span>Armazenamento Utilizável</span>
               </div>
               <div className="text-2xl font-bold">{formatStorage(calculateUsableCapacity())}</div>
-              <div className="text-sm text-slate-400 mt-1">
-                After RAID ({config.raidType})
-              </div>
+              <div className="text-sm text-slate-400">Após RAID ({config.raidType})</div>
+            </div>
+
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Volumetria de Armazenamento</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
+                <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
+                  <Gauge
+                    value={calculateRawCapacity()}
+                    max={config.diskSize * 24} // Assuming max 24 disks
+                    label="Armazenamento Total"
+                    unit="GB"
+                    color="#3b82f6"
+                    size={180}
+                  />
+                </div>
+                <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
+                  <Gauge
+                    value={calculateUsableCapacity()}
+                    max={config.diskSize * 24 * RAID_FACTORS[config.raidType]}
+                    label="Armazenamento Utilizável"
+                    unit="GB"
+                    color="#10b981"
+                    size={180}
+                  />
+                </div>
               </div>
             </div>
 
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4">Storage Volumetry</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
-              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                <Gauge
-                  value={calculateRawCapacity()}
-                  max={config.diskSize * 24} // Assuming max 24 disks
-                  label="Raw Capacity"
-                  unit="GB"
-                  color="#3b82f6"
-                  size={180}
-                />
-              </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                <Gauge
-                  value={calculateUsableCapacity()}
-                  max={config.diskSize * 24 * RAID_FACTORS[config.raidType]}
-                  label="Usable Capacity"
-                  unit="GB"
-                  color="#10b981"
-                  size={180}
-                />
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
+                <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
+                  <Gauge
+                    value={performanceMetrics.iops.total}
+                    max={STORAGE_TYPE_IOPS[config.storageType].base * config.numberOfDisks * 2}
+                    label="Total IOPS"
+                    unit="IOPS"
+                    color="#f59e0b"
+                    size={180}
+                  />
+                  <div className="mt-4 text-sm text-slate-400">
+                    <div>Leitura: {Math.round(performanceMetrics.iops.read).toLocaleString()} IOPS</div>
+                    <div>Escrita: {Math.round(performanceMetrics.iops.write).toLocaleString()} IOPS</div>
+                    <div className="mt-2">Total: {Math.round(performanceMetrics.iops.total).toLocaleString()} IOPS</div>
+                  </div>
+                </div>
+                <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
+                  <Gauge
+                    value={performanceMetrics.throughput.total}
+                    max={performanceMetrics.iops.total * config.blockSize / 1024 * 2}
+                    label="Taxa de Transferência"
+                    unit="MB/s"
+                    color="#8b5cf6"
+                    size={180}
+                  />
+                  <div className="mt-4 text-sm text-slate-400">
+                    <div>Leitura: {Math.round(performanceMetrics.throughput.read)} MB/s</div>
+                    <div>Escrita: {Math.round(performanceMetrics.throughput.write)} MB/s</div>
+                    <div className="mt-2">Total: {Math.round(performanceMetrics.throughput.total)} MB/s</div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
-            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                <Gauge
-                  value={performanceMetrics.iops.total}
-                  max={STORAGE_TYPE_IOPS[config.storageType].base * config.numberOfDisks * 2}
-                  label="Total IOPS"
-                  unit="IOPS"
-                  color="#f59e0b"
-                  size={180}
-                />
-              </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                <Gauge
-                  value={performanceMetrics.throughput.total}
-                  max={performanceMetrics.iops.total * config.blockSize / 1024 * 2}
-                  label="Total Throughput"
-                  unit="MB/s"
-                  color="#8b5cf6"
-                  size={180}
-                />
-              </div>
-            </div>
-          </div>
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Detailed Metrics</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Activity size={20} />
+                    <span>Total IOPS</span>
+                  </div>
+                  <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.total).toLocaleString()}</div>
+                  <div className="text-sm text-slate-400">IOPS Totais</div>
+                  <div className="text-xs text-slate-500">{Math.round(performanceMetrics.iops.perGB)} IOPS/GB</div>
+                </div>
 
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4">Detailed Metrics</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Activity size={20} />
-                  <span>Total IOPS</span>
+                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Activity size={20} />
+                    <span>Read IOPS</span>
+                  </div>
+                  <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.read).toLocaleString()}</div>
+                  <div className="text-sm text-slate-400">IOPS de Leitura</div>
+                  <div className="text-xs text-slate-500">{Math.round(performanceMetrics.throughput.read)} MB/s</div>
                 </div>
-                <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.total).toLocaleString()}</div>
-                <div className="text-sm text-slate-400 mt-1">
-                  {Math.round(performanceMetrics.iops.perGB)} IOPS/GB
-                </div>
-              </div>
 
-              <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Activity size={20} />
-                  <span>Read IOPS</span>
+                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Activity size={20} />
+                    <span>Write IOPS</span>
+                  </div>
+                  <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.write).toLocaleString()}</div>
+                  <div className="text-sm text-slate-400">IOPS de Escrita</div>
+                  <div className="text-xs text-slate-500">{Math.round(performanceMetrics.throughput.write)} MB/s</div>
                 </div>
-                <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.read).toLocaleString()}</div>
-                <div className="text-sm text-slate-400 mt-1">
-                  {Math.round(performanceMetrics.throughput.read)} MB/s
-                </div>
-              </div>
 
-              <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Activity size={20} />
-                  <span>Write IOPS</span>
-                </div>
-                <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.write).toLocaleString()}</div>
-                <div className="text-sm text-slate-400 mt-1">
-                  {Math.round(performanceMetrics.throughput.write)} MB/s
-                </div>
-            </div>
-
-              <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                <div className="flex items-center gap-2 text-slate-400 mb-2">
-                  <Activity size={20} />
-                  <span>Latency</span>
-                </div>
-                <div className="text-2xl font-bold">{performanceMetrics.latency.average.toFixed(2)} ms</div>
-                <div className="text-sm text-slate-400 mt-1">
-                  Max: {performanceMetrics.latency.maximum.toFixed(2)} ms
+                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Activity size={20} />
+                    <span>Latência</span>
+                  </div>
+                  <div className="text-2xl font-bold">{performanceMetrics.latency.average.toFixed(2)} ms</div>
+                  <div className="text-sm text-slate-400">Latência Média</div>
+                  <div className="text-xs text-slate-500">Máx: {performanceMetrics.latency.maximum.toFixed(2)} ms</div>
                 </div>
               </div>
             </div>
@@ -430,7 +432,7 @@ const StorageCalculator = () => {
         </div>
 
         <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-          <h3 className="text-lg font-semibold mb-6">Storage Configuration</h3>
+          <h3 className="text-lg font-semibold mb-6">Configuração de Armazenamento</h3>
           
           <div className="space-y-4">
             <div>
@@ -465,23 +467,23 @@ const StorageCalculator = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                RAID Type
+                Tipo de RAID
               </label>
               <select
                 value={config.raidType}
                 onChange={(e) => setConfig({ ...config, raidType: e.target.value as StorageConfig['raidType'] })}
                 className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
               >
-                <option value="RAID 1">RAID 1 (Mirroring)</option>
-                <option value="RAID 5">RAID 5 (Striping with Parity)</option>
-                <option value="RAID 6">RAID 6 (Double Parity)</option>
-                <option value="RAID 10">RAID 10 (Striping + Mirroring)</option>
+                <option value="RAID1">RAID-1 (Espelhamento)</option>
+                <option value="RAID5">RAID-5 (Paridade Simples)</option>
+                <option value="RAID6">RAID-6 (Paridade Dupla)</option>
+                <option value="RAID10">RAID-10 (Espelhamento + Distribuição)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Storage Type
+                Tipo de Armazenamento
               </label>
               <select
                 value={config.storageType}
@@ -512,16 +514,16 @@ const StorageCalculator = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Workload Type
+                Tipo de Carga de Trabalho
               </label>
               <select
                 value={config.workloadType}
                 onChange={(e) => setConfig({ ...config, workloadType: e.target.value as StorageConfig['workloadType'] })}
                 className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
               >
-                <option value="random_read">Random Read</option>
-                <option value="sequential_write">Sequential Write</option>
-                <option value="mixed">Mixed</option>
+                <option value="OLTP">OLTP (Transacional)</option>
+                <option value="OLAP">OLAP (Analítico)</option>
+                <option value="Mixed">Mista</option>
               </select>
             </div>
 
@@ -551,7 +553,7 @@ const StorageCalculator = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Latency (ms)
+                Latência (ms)
               </label>
               <input
                 type="number"
@@ -561,17 +563,27 @@ const StorageCalculator = () => {
                 min="0"
                 max="100"
               />
-          </div>
+            </div>
 
-          <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-              <h4 className="text-sm font-medium text-slate-300 mb-2">Performance Guidelines</h4>
-            <div className="space-y-2 text-sm text-slate-400">
-                <p>SSD: 10,000+ IOPS, 0.1ms latency</p>
-                <p>HDD: 100-200 IOPS, 10ms latency</p>
-                <p>RAID 1: Best for read performance</p>
-                <p>RAID 5: Good balance, write penalty</p>
-                <p>RAID 6: Highest protection, lower performance</p>
-                <p>RAID 10: Best performance, 50% capacity</p>
+            <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
+              <h4 className="text-sm font-medium text-slate-300 mb-2">Diretrizes de Performance</h4>
+              <div className="space-y-2 text-sm text-slate-400">
+                <p>SSD: 10.000+ IOPS, 0,1ms latência</p>
+                <p>HDD: 100-200 IOPS, 10ms latência</p>
+                <p>RAID 1: Melhor para performance de leitura</p>
+                <p>RAID 5: Bom equilíbrio, penalidade de escrita</p>
+                <p>RAID 6: Maior proteção, menor performance</p>
+                <p>RAID 10: Melhor performance, 50% de capacidade</p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
+              <h4 className="text-sm font-medium text-slate-300 mb-2">Detalhes da Configuração RAID</h4>
+              <div className="space-y-2 text-sm text-slate-400">
+                <p>RAID 1: 50% de capacidade utilizável (espelhamento)</p>
+                <p>RAID 5: 75% de capacidade utilizável (paridade simples)</p>
+                <p>RAID 6: 67% de capacidade utilizável (paridade dupla)</p>
+                <p>RAID 10: 50% de capacidade utilizável (espelhamento + distribuição)</p>
               </div>
             </div>
           </div>

@@ -219,8 +219,8 @@ const ServerCalculator = () => {
   };
 
   const storageData = [
-    { name: 'Raw Storage', value: servers.reduce((acc, server) => acc + (server.disks * server.diskSize), 0) },
-    { name: 'Usable Storage', value: servers.reduce((acc, server) => acc + calculateTotalStorage(server), 0) }
+    { name: 'Armazenamento Bruto', value: servers.reduce((acc, server) => acc + (server.disks * server.diskSize), 0) },
+    { name: 'Armazenamento Utilizável', value: servers.reduce((acc, server) => acc + calculateTotalStorage(server), 0) }
   ];
 
   if (!selectedProcessor) {
@@ -232,25 +232,25 @@ const ServerCalculator = () => {
       <div className="w-[400px] flex-shrink-0">
         <div className="sticky top-2">
           <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-            <h2 className="text-xl font-semibold mb-6">Server Management</h2>
+            <h2 className="text-xl font-semibold mb-6">Gerenciamento de Servidores</h2>
             <div className="space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Server Name
+                    Nome do Servidor
                   </label>
                   <input
                     type="text"
                     value={newServer.name}
                     onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                    placeholder="Enter server name"
+                    placeholder="Digite o nome do servidor"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Quantity
+                    Quantidade
                   </label>
                   <input
                     type="number"
@@ -264,7 +264,7 @@ const ServerCalculator = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Rack Units (U)
+                    Unidades de Rack (U)
                   </label>
                   <input
                     type="number"
@@ -278,7 +278,7 @@ const ServerCalculator = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Processor Model
+                    Modelo do Processador
                   </label>
                   <select
                     value={newServer.processorId}
@@ -295,7 +295,7 @@ const ServerCalculator = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Number of Processors
+                    Número de Processadores
                   </label>
                   <input
                     type="number"
@@ -309,7 +309,7 @@ const ServerCalculator = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Number of Disks
+                    Número de Discos
                   </label>
                   <input
                     type="number"
@@ -322,7 +322,7 @@ const ServerCalculator = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Disk Size
+                    Tamanho do Disco
                   </label>
                   <select
                     value={newServer.diskSize}
@@ -339,7 +339,7 @@ const ServerCalculator = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">
-                    RAID Type
+                    Tipo de RAID
                   </label>
                   <select
                     value={newServer.raidType}
@@ -358,7 +358,7 @@ const ServerCalculator = () => {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors"
               >
                 {editingServer ? <Edit2 size={20} /> : <Plus size={20} />}
-                {editingServer ? 'Update Server' : 'Add Server'}
+                {editingServer ? 'Atualizar Servidor' : 'Adicionar Servidor'}
               </button>
             </div>
           </div>
@@ -373,7 +373,7 @@ const ServerCalculator = () => {
               className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 flex items-center gap-2 transition-colors"
             >
               <Trash2 size={18} />
-              Clear All
+              Limpar Tudo
             </button>
             <div className="flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-lg">
               <input
@@ -384,7 +384,7 @@ const ServerCalculator = () => {
                 className="rounded border-slate-500"
               />
               <label htmlFor="nPlusOne" className="text-sm text-slate-300">
-                N+1 Redundancy
+                Redundância N+1
               </label>
             </div>
           </div>
@@ -393,13 +393,13 @@ const ServerCalculator = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2 flex items-center gap-2 transition-colors"
           >
             <Download size={18} />
-            Export Report
+            Exportar Relatório
           </button>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-            <div className="text-sm text-slate-400 mb-1">Total Servers</div>
+            <div className="text-sm text-slate-400 mb-1">Total de Servidores</div>
             <div className="text-2xl font-bold">
               {servers.length}{considerNPlusOne && servers.length > 0 ? ' (+1)' : ''}
             </div>
@@ -411,13 +411,13 @@ const ServerCalculator = () => {
             </div>
           </div>
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-            <div className="text-sm text-slate-400 mb-1">Raw Storage</div>
+            <div className="text-sm text-slate-400 mb-1">Armazenamento Bruto</div>
             <div className="text-2xl font-bold">
               {formatStorage(servers.reduce((acc, server) => acc + (server.disks * server.diskSize), 0))}
             </div>
           </div>
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-            <div className="text-sm text-slate-400 mb-1">Usable Storage</div>
+            <div className="text-sm text-slate-400 mb-1">Armazenamento Utilizável</div>
             <div className="text-2xl font-bold">
               {formatStorage(servers.reduce((acc, server) => acc + calculateTotalStorage(server), 0))}
             </div>
@@ -427,9 +427,9 @@ const ServerCalculator = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Server List</h2>
+              <h2 className="text-lg font-semibold">Lista de Servidores</h2>
               <span className="text-sm text-slate-400">
-                {servers.length} server{servers.length !== 1 ? 's' : ''}
+                {servers.length} servidor{servers.length !== 1 ? 'es' : ''}
               </span>
             </div>
             <div className="space-y-1 max-h-[250px] overflow-y-auto">
@@ -471,7 +471,7 @@ const ServerCalculator = () => {
 
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Storage Distribution</h2>
+              <h2 className="text-lg font-semibold">Distribuição de Armazenamento</h2>
               <div className="text-sm text-slate-400">
                 Total: {formatStorage(storageData[0].value)}
               </div>
@@ -515,7 +515,7 @@ const ServerCalculator = () => {
               </ResponsiveContainer>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-slate-400">
-                No servers added yet
+                Nenhum servidor adicionado ainda
               </div>
             )}
           </div>
@@ -524,7 +524,7 @@ const ServerCalculator = () => {
         <div>
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Rack Layout</h2>
+              <h2 className="text-lg font-semibold">Layout do Rack</h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => setRackView('front')}
@@ -534,7 +534,7 @@ const ServerCalculator = () => {
                       : 'bg-slate-700 text-slate-300'
                   }`}
                 >
-                  Front View
+                  Vista Frontal
                 </button>
                 <button
                   onClick={() => setRackView('rear')}
@@ -544,7 +544,7 @@ const ServerCalculator = () => {
                       : 'bg-slate-700 text-slate-300'
                   }`}
                 >
-                  Rear View
+                  Vista Traseira
                 </button>
               </div>
             </div>
