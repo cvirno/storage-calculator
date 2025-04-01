@@ -202,18 +202,18 @@ const VsanCalculator = () => {
     // Apply data reduction ratio
     usableStoragePerDisk *= serverConfig.dataReductionRatio;
 
+    // Calculate usable storage per server
     const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
     const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * UTILIZATION_LIMIT));
-    
-    // Take the maximum of servers needed for all resources
-    let servers = Math.max(serversForCompute, serversForStorage, serversForMemory);
-    
-    if (serverConfig.considerNPlusOne) {
-      servers += 1;
-    }
+
+    // Determine the maximum number of servers needed
+    const maxServers = Math.max(serversForCompute, serversForStorage, serversForMemory);
+
+    // Add one more server if N+1 is considered
+    const totalServers = serverConfig.considerNPlusOne ? maxServers + 1 : maxServers;
 
     return {
-      total: servers,
+      total: totalServers,
       forCompute: serversForCompute,
       forStorage: serversForStorage,
       forMemory: serversForMemory,
@@ -688,35 +688,17 @@ const VsanCalculator = () => {
           <div className="bg-slate-800 p-6 rounded-xl shadow-xl">
             <h2 className="text-xl font-semibold mb-6">Requisitos de Recursos</h2>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-base text-slate-400">Servidores Necessários</p>
-                <p className="text-2xl font-bold">{serverRequirements.total}</p>
-                <div className="text-base text-slate-400 mt-1">
-                  <p>Computação: {serverRequirements.forCompute}</p>
-                  <p>Armazenamento: {serverRequirements.forStorage}</p>
-                </div>
+            <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
+              <div className="flex items-center gap-2 text-slate-400 mb-2">
+                <Server size={20} />
+                <span>Servidores Necessários</span>
               </div>
-              
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-base text-slate-400">Total de vCPUs</p>
-                <p className="text-2xl font-bold">{totalResources.vCPUs}</p>
-                <p className="text-base text-slate-400 mt-1">
-                  {(totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 proporção
-                </p>
-              </div>
-              
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-base text-slate-400">Memória Total</p>
-                <p className="text-2xl font-bold">{formatStorage(totalResources.memory)}</p>
-              </div>
-              
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <p className="text-base text-slate-400">Armazenamento Total</p>
-                <p className="text-2xl font-bold">{formatStorage(totalResources.storage)}</p>
-                <p className="text-base text-slate-400 mt-1">
-                  {formatStorage(serverRequirements.storagePerServer)} por servidor
-                </p>
+              <div className="text-2xl font-bold">{serverRequirements.total}</div>
+              <div className="text-sm text-slate-400">
+                <div>CPU: {serverRequirements.forCompute}</div>
+                <div>Memória: {serverRequirements.forMemory}</div>
+                <div>Armazenamento: {serverRequirements.forStorage}</div>
+                {serverConfig.considerNPlusOne && <div className="text-blue-400">+1 para N+1</div>}
               </div>
             </div>
 
