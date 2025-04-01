@@ -18,7 +18,7 @@ function AppContent() {
     return (
       <div className="app-container">
         <header className="app-header">
-          <h1>Private Cloud Sizing</h1>
+          <h1>InfiniSizing</h1>
           <div className="auth-buttons">
             <button onClick={() => loginWithRedirect()} className="login-button">
               Login
@@ -39,7 +39,12 @@ function AppContent() {
       
       <div className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-center">Private Cloud Sizing</h1>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-2">InfiniSizing</h1>
+            <p className="text-sm text-slate-400 max-w-2xl">
+              Essa ferramenta tem o intuito de ajudar Pre sales e Arquitetos de Soluçãoes com ESTIMATIVAS de SIZING, portanto a ferramente pode apresentar calculos incorretos e sempre recomendo verificar com o seu projeto os cálculso apresentados.
+            </p>
+          </div>
           <div className="auth-buttons">
             <div className="user-info">
               <span>Bem-vindo, {user?.name}</span>
