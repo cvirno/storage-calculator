@@ -134,9 +134,9 @@ const calculatePerformanceMetrics = (config: StorageConfig): PerformanceMetrics 
   // Calculate total IOPS based on number of disks and RAID configuration
   const totalIOPS = baseIOPS * config.numberOfDisks * raidFactor * workloadFactor;
   
-  // Calculate read/write IOPS based on percentage
-  const readIOPS = totalIOPS * (config.readPercentage / 100);
-  const writeIOPS = totalIOPS * ((100 - config.readPercentage) / 100);
+  // Calculate read/write IOPS based on percentage and RAID type
+  const readIOPS = totalIOPS * (config.readPercentage / 100) * (config.raidType === 'RAID 1' ? 1.2 : 1.0);
+  const writeIOPS = totalIOPS * ((100 - config.readPercentage) / 100) * (config.raidType === 'RAID 5' ? 0.8 : 1.0);
   
   // Calculate throughput in MB/s
   const readThroughput = (readIOPS * config.blockSize) / 1024;
@@ -156,10 +156,10 @@ const calculatePerformanceMetrics = (config: StorageConfig): PerformanceMetrics 
   
   return {
     iops: {
-      total: totalIOPS,
+      total: readIOPS + writeIOPS,
       read: readIOPS,
       write: writeIOPS,
-      perGB: totalIOPS / (config.diskSize * config.numberOfDisks)
+      perGB: (readIOPS + writeIOPS) / (config.diskSize * config.numberOfDisks)
     },
     throughput: {
       read: readThroughput,
@@ -363,8 +363,8 @@ const StorageCalculator = () => {
                     size={180}
                   />
                   <div className="mt-4 text-sm text-slate-400">
-                    <div>Leitura: {Math.round(performanceMetrics.iops.read).toLocaleString()} IOPS</div>
-                    <div>Escrita: {Math.round(performanceMetrics.iops.write).toLocaleString()} IOPS</div>
+                    <div>Leitura: {Math.round(performanceMetrics.iops.read).toLocaleString()} IOPS ({config.readPercentage}%)</div>
+                    <div>Escrita: {Math.round(performanceMetrics.iops.write).toLocaleString()} IOPS ({100 - config.readPercentage}%)</div>
                     <div className="mt-2">Total: {Math.round(performanceMetrics.iops.total).toLocaleString()} IOPS</div>
                   </div>
                 </div>
