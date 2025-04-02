@@ -86,21 +86,9 @@ function AppContent() {
         <div className="flex justify-between items-center mb-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-2">InfiniSizing</h1>
-            <p className="text-sm text-slate-400 max-w-2xl mb-4">
-              O InfiniSizing é uma ferramenta desenvolvida para apoiar Pré-Vendas e Arquitetos de Soluções no dimensionamento de infraestrutura para Data Centers. Seu objetivo é fornecer cálculos aproximados que facilitem o planejamento, oferecendo uma base para análises técnicas mais aprofundadas.
+            <p className="text-sm text-slate-400 max-w-2xl">
+              Essa ferramenta tem o intuito de ajudar Pre sales e Arquitetos de Soluçãoes com ESTIMATIVAS de SIZING, portanto a ferramente pode apresentar calculos incorretos e sempre recomendo verificar com o seu projeto os cálculso apresentados.
             </p>
-            <div className="bg-slate-800/50 p-4 rounded-lg text-sm text-slate-300">
-              <h2 className="font-semibold text-blue-400 mb-2">Aviso Legal:</h2>
-              <p className="mb-2">
-                As estimativas e os cálculos gerados pelo InfiniSizing são de caráter aproximativo e têm como objetivo servir como apoio à tomada de decisão. A ferramenta não substitui análises técnicas detalhadas ou a consulta a especialistas.
-              </p>
-              <p className="mb-2">
-                A responsabilidade pela interpretação e pelo uso das informações fornecidas é exclusivamente do usuário. A equipe do InfiniSizing se exime de qualquer responsabilidade por decisões tomadas com base nos resultados apresentados pela ferramenta.
-              </p>
-              <p>
-                Utilize o InfiniSizing como um recurso adicional para impulsionar sua capacidade analítica, respeitando os limites de sua função e aplicabilidade.
-              </p>
-            </div>
           </div>
           <div className="auth-buttons">
             {isAuthenticated && (
