@@ -30,13 +30,6 @@ function AppContent() {
               <h1 className="text-2xl font-bold text-white">InfiniSizing</h1>
               <span className="text-sm text-blue-300">By Cesar Virno</span>
             </div>
-            <button
-              onClick={() => logout()}
-              className="bg-blue-600/20 hover:bg-blue-600/30 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all duration-300 backdrop-blur-sm border border-blue-500/30 hover:border-blue-500/50"
-            >
-              <SignOut size={16} />
-              Logout
-            </button>
           </header>
 
           <div className="max-w-3xl mx-auto text-center animate-slide-up">
