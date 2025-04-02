@@ -20,7 +20,7 @@ function AppContent() {
         <div className="container mx-auto px-4 py-6">
           <header className="flex justify-between items-center mb-12 animate-fade-in">
             <div className="flex items-center gap-2">
-              <img src="/images/Logo%20Infiniti.png" alt="InfiniSizing Logo" className="w-8 h-8" />
+              <img src="/images/LogoInfiniti.png" alt="InfiniSizing Logo" className="w-8 h-8" />
               <div className="flex flex-col">
                 <h1 className="text-2xl font-bold text-white">InfiniSizing</h1>
                 <span className="text-sm text-blue-300">By Cesar Virno</span>
