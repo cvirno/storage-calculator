@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Cpu, Server, AlertTriangle, MemoryStick as Memory, Database, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { supabase } from '../lib/supabase';
+import { Tooltip } from './Tooltip';
+import { LoadingSpinner } from './LoadingSpinner';
 
 const COLORS = ['#3B82F6', '#1F2937'];
 
@@ -125,6 +127,13 @@ const VsanCalculator = () => {
   });
   const [servers, setServers] = useState<Server[]>([{ id: 1, cpu: 0, memory: 0, disk: 0 }]);
   const [utilizationThreshold, setUtilizationThreshold] = useState(95);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [result, setResult] = useState<{
+    totalStorage: number;
+    totalMemory: number;
+    totalCpu: number;
+    recommendedServers: number;
+  } | null>(null);
 
   useEffect(() => {
     const fetchProcessors = async () => {
@@ -311,6 +320,29 @@ const VsanCalculator = () => {
         setSelectedProcessor(processors[0]);
       }
     }
+  };
+
+  const calculateVsan = () => {
+    setIsCalculating(true);
+    // Simulando um delay para mostrar o loading
+    setTimeout(() => {
+      const totalStorage = servers.reduce((sum, server) => sum + server.disk, 0);
+      const totalMemory = servers.reduce((sum, server) => sum + server.memory, 0);
+      const totalCpu = servers.reduce((sum, server) => sum + server.cpu, 0);
+
+      // Cálculo simplificado para exemplo
+      const recommendedServers = Math.ceil(
+        (totalStorage * (100 / utilizationThreshold)) / 1000
+      );
+
+      setResult({
+        totalStorage,
+        totalMemory,
+        totalCpu,
+        recommendedServers
+      });
+      setIsCalculating(false);
+    }, 1000);
   };
 
   if (!selectedProcessor) {
@@ -1004,6 +1036,44 @@ const VsanCalculator = () => {
           </div>
         </div>
       </div>
+
+      <div className="flex gap-4">
+        <button
+          onClick={calculateVsan}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-300"
+          disabled={isCalculating}
+        >
+          {isCalculating ? (
+            <LoadingSpinner size="sm" text="Calculando..." />
+          ) : (
+            'Calcular'
+          )}
+        </button>
+      </div>
+
+      {result && !isCalculating && (
+        <div className="mt-8 bg-slate-700/50 p-6 rounded-lg border border-blue-500/20 animate-fade-in">
+          <h3 className="text-xl font-semibold text-white mb-4">Resultados</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-600/30 p-4 rounded-lg">
+              <p className="text-slate-300">Armazenamento Total</p>
+              <p className="text-2xl font-bold text-white">{result.totalStorage} GB</p>
+            </div>
+            <div className="bg-slate-600/30 p-4 rounded-lg">
+              <p className="text-slate-300">Memória Total</p>
+              <p className="text-2xl font-bold text-white">{result.totalMemory} GB</p>
+            </div>
+            <div className="bg-slate-600/30 p-4 rounded-lg">
+              <p className="text-slate-300">CPUs Totais</p>
+              <p className="text-2xl font-bold text-white">{result.totalCpu}</p>
+            </div>
+            <div className="bg-slate-600/30 p-4 rounded-lg">
+              <p className="text-slate-300">Servidores Recomendados</p>
+              <p className="text-2xl font-bold text-white">{result.recommendedServers}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
