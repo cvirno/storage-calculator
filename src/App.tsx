@@ -48,7 +48,7 @@ function AppContent() {
               </div>
             </div>
 
-            <h2 className="text-4xl font-bold mb-6">Bem-vindo ao Data Center Calculator</h2>
+            <h2 className="text-4xl font-bold mb-6">Bem-vindo ao InfiniSizing</h2>
             <p className="text-lg text-slate-300 mb-8">
               Calcule e otimize seus recursos de data center com precisão
             </p>
