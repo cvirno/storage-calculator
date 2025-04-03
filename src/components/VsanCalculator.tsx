@@ -725,6 +725,7 @@ const VsanCalculator = () => {
                 <p className="text-2xl font-bold">{serverRequirements.total}</p>
                 <div className="text-[9px] text-slate-400 mt-1">
                   <p>Computação: {serverRequirements.forCompute}</p>
+                  <p>Memória: {serverRequirements.forMemory}</p>
                   <p>Armazenamento: {serverRequirements.forStorage}</p>
                 </div>
               </div>
