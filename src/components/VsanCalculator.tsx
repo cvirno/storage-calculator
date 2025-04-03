@@ -292,6 +292,16 @@ const VsanCalculator = () => {
     return cpuUtilization;
   };
 
+  const calculateMemoryUtilization = () => {
+    const totalResources = calculateTotalResources();
+    const serverReqs = calculateRequiredServers();
+    
+    const totalAvailableMemory = serverReqs.total * (serverConfig.memorySize * serverConfig.memorySlots);
+    const memoryUtilization = (totalResources.usableMemory / totalAvailableMemory) * 100;
+    
+    return memoryUtilization;
+  };
+
   const calculateStorageUtilization = () => {
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
@@ -321,6 +331,7 @@ const VsanCalculator = () => {
   const serverRequirements = calculateRequiredServers();
   const cpuUtilization = calculateCPUUtilization();
   const storageUtilization = calculateStorageUtilization();
+  const memoryUtilization = calculateMemoryUtilization();
 
   const cpuUtilizationData = [
     { name: 'Used', value: cpuUtilization },
@@ -330,6 +341,11 @@ const VsanCalculator = () => {
   const storageUtilizationData = [
     { name: 'Used', value: storageUtilization },
     { name: 'Available', value: 100 - storageUtilization }
+  ];
+
+  const memoryUtilizationData = [
+    { name: 'Used', value: memoryUtilization },
+    { name: 'Available', value: 100 - memoryUtilization }
   ];
 
   const calculateTotalRawStorage = () => {
@@ -879,11 +895,7 @@ const VsanCalculator = () => {
                     <Memory className="text-green-400" size={24} />
                     <div>
                       <h3 className="text-lg font-semibold">Memory</h3>
-                      <p className="text-3xl font-bold mt-1">
-                        {calculateTotalResources().totalMemory > 0 
-                          ? ((calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1) 
-                          : '0.0'}%
-                      </p>
+                      <p className="text-3xl font-bold mt-1">{memoryUtilization.toFixed(1)}%</p>
                     </div>
                   </div>
                 </div>
@@ -891,20 +903,7 @@ const VsanCalculator = () => {
                 <ResponsiveContainer width="100%" height={100}>
                   <PieChart>
                     <Pie
-                      data={[
-                        { 
-                          name: 'Used', 
-                          value: calculateTotalResources().totalMemory > 0 
-                            ? (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100 
-                            : 0 
-                        },
-                        { 
-                          name: 'Available', 
-                          value: calculateTotalResources().totalMemory > 0 
-                            ? 100 - (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100 
-                            : 100 
-                        }
-                      ]}
+                      data={memoryUtilizationData}
                       cx="50%"
                       cy="50%"
                       innerRadius={25}
@@ -915,7 +914,7 @@ const VsanCalculator = () => {
                       startAngle={180}
                       endAngle={0}
                     >
-                      {[0, 1].map((index) => (
+                      {memoryUtilizationData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -928,27 +927,18 @@ const VsanCalculator = () => {
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></div>
                       <span className="text-[10px]">Used</span>
                     </div>
-                    <span className="font-medium text-[10px]">
-                      {calculateTotalResources().totalMemory > 0 
-                        ? ((calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1) 
-                        : '0.0'}%
-                    </span>
+                    <span className="font-medium text-[10px]">{memoryUtilization.toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></div>
                       <span className="text-[10px]">Available</span>
                     </div>
-                    <span className="font-medium text-[10px]">
-                      {calculateTotalResources().totalMemory > 0 
-                        ? (100 - (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100).toFixed(1) 
-                        : '100.0'}%
-                    </span>
+                    <span className="font-medium text-[10px]">{(100 - memoryUtilization).toFixed(1)}%</span>
                   </div>
                 </div>
 
-                {calculateTotalResources().totalMemory > 0 && 
-                 (calculateTotalResources().usableMemory / calculateTotalResources().totalMemory) * 100 > 80 && (
+                {memoryUtilization > 80 && (
                   <div className="mt-4 bg-slate-900/50 text-slate-200 p-3 rounded-lg flex items-center gap-2">
                     <AlertTriangle size={16} />
                     <p className="text-[10px]">High utilization!</p>
@@ -1121,7 +1111,7 @@ const VsanCalculator = () => {
           </div>
           <div>
             <p className="text-sm text-slate-400">Memória Total</p>
-            <p className="text-xl font-medium text-white">{calculateTotalResources().totalMemory || 0} GB</p>
+            <p className="text-xl font-medium text-white">{calculateTotalResources().totalMemory} GB</p>
             <p className="text-sm text-slate-400">Memória Utilizável ({utilizationThreshold}%)</p>
             <p className="text-xl font-medium text-white">{calculateTotalResources().usableMemory.toFixed(1)} GB</p>
             <div className="mt-2">
