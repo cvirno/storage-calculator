@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { HardDrive, Database, Download, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { HardDrive, Database, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -9,30 +9,6 @@ interface StorageConfig {
   diskSize: number;
   numberOfDisks: number;
   storageType: 'SSD' | 'HDD';
-  blockSize: number;
-  workloadType: 'random_read' | 'sequential_write' | 'mixed';
-  readPercentage: number;
-  latency: number;
-}
-
-interface PerformanceMetrics {
-  iops: {
-    total: number;
-    read: number;
-    write: number;
-    perGB: number;
-  };
-  throughput: {
-    read: number;
-    write: number;
-    total: number;
-  };
-  latency: {
-    read: number;
-    write: number;
-    average: number;
-    maximum: number;
-  };
 }
 
 interface GaugeProps {
@@ -66,18 +42,6 @@ const DISK_SIZES = [
   24000,    // 24 TB
 ];
 
-const BLOCK_SIZES = [
-  4,    // 4 KB
-  8,    // 8 KB
-  16,   // 16 KB
-  32,   // 32 KB
-  64,   // 64 KB
-  128,  // 128 KB
-  256,  // 256 KB
-  512,  // 512 KB
-  1024, // 1 MB
-];
-
 const RAID_FACTORS = {
   'RAID 1': 0.5,
   'RAID 5': 0.75,
@@ -85,97 +49,48 @@ const RAID_FACTORS = {
   'RAID 10': 0.5
 };
 
-const RAID_IOPS_FACTORS = {
-  'RAID 1': 1.0,
-  'RAID 5': 0.8,
-  'RAID 6': 0.7,
-  'RAID 10': 1.2
-};
-
-const WORKLOAD_FACTORS = {
-  random_read: 1.0,
-  sequential_write: 1.5,
-  mixed: 1.2
-};
-
-const STORAGE_TYPE_IOPS = {
-  SSD: {
-    base: 10000,
-    latency: 0.1
-  },
-  HDD: {
-    base: 100,
-    latency: 10
-  }
-};
-
 const formatStorage = (gb: number): string => {
-  const GiB = gb * (1000/1024); // Convert GB to GiB
-  if (GiB >= 1024) {
-    const TiB = GiB / 1024;
-    // Use exact decimal points for specific values
-    if (Math.abs(TiB - 1.92) < 0.01) return '1.92 TiB';
-    if (Math.abs(TiB - 3.84) < 0.01) return '3.84 TiB';
-    if (Math.abs(TiB - 7.68) < 0.01) return '7.68 TiB';
-    if (Math.abs(TiB - 15.36) < 0.01) return '15.36 TiB';
-    // For standard TiB values, show as whole numbers
-    if (Math.floor(TiB) === TiB) return `${TiB} TiB`;
-    return `${TiB.toFixed(2)} TiB`;
+  if (!gb || isNaN(gb)) return '0 GB';
+  
+  if (gb >= 1000) {
+    const tb = gb / 1000;
+    if (Math.abs(tb - 1.92) < 0.01) return '1.92 TB';
+    if (Math.abs(tb - 3.84) < 0.01) return '3.84 TB';
+    if (Math.abs(tb - 7.68) < 0.01) return '7.68 TB';
+    if (Math.abs(tb - 15.36) < 0.01) return '15.36 TB';
+    if (Math.floor(tb) === tb) return `${tb} TB`;
+    return `${tb.toFixed(2)} TB`;
   }
-  return `${GiB.toFixed(2)} GiB`;
+  return `${gb} GB`;
 };
 
-const calculatePerformanceMetrics = (config: StorageConfig): PerformanceMetrics => {
-  const baseIOPS = STORAGE_TYPE_IOPS[config.storageType].base;
-  const raidFactor = RAID_IOPS_FACTORS[config.raidType];
-  const workloadFactor = WORKLOAD_FACTORS[config.workloadType];
+const calculateRawCapacity = (diskSize: number, numberOfDisks: number): number => {
+  if (!diskSize || !numberOfDisks) return 0;
+  return diskSize * numberOfDisks;
+};
+
+const calculateUsableCapacity = (diskSize: number, numberOfDisks: number, raidType: string): number => {
+  const rawCapacity = calculateRawCapacity(diskSize, numberOfDisks);
+  if (!rawCapacity) return 0;
   
-  // Calculate total IOPS based on number of disks and RAID configuration
-  const totalIOPS = baseIOPS * config.numberOfDisks * raidFactor * workloadFactor;
-  
-  // Calculate read/write IOPS based on percentage
-  const readIOPS = totalIOPS * (config.readPercentage / 100);
-  const writeIOPS = totalIOPS * ((100 - config.readPercentage) / 100);
-  
-  // Calculate throughput in MB/s
-  const readThroughput = (readIOPS * config.blockSize) / 1024;
-  const writeThroughput = (writeIOPS * config.blockSize) / 1024;
-  
-  // Calculate latency
-  const baseLatency = STORAGE_TYPE_IOPS[config.storageType].latency;
-  const raidLatencyFactor = {
-    'RAID 1': 1.0,
-    'RAID 5': 1.2,
-    'RAID 6': 1.4,
-    'RAID 10': 1.1
-  }[config.raidType];
-  
-  const readLatency = baseLatency * raidLatencyFactor;
-  const writeLatency = baseLatency * raidLatencyFactor * 1.5; // Writes are typically slower
-  
-  return {
-    iops: {
-      total: totalIOPS,
-      read: readIOPS,
-      write: writeIOPS,
-      perGB: totalIOPS / (config.diskSize * config.numberOfDisks)
-    },
-    throughput: {
-      read: readThroughput,
-      write: writeThroughput,
-      total: readThroughput + writeThroughput
-    },
-    latency: {
-      read: readLatency,
-      write: writeLatency,
-      average: (readLatency + writeLatency) / 2,
-      maximum: Math.max(readLatency, writeLatency)
-    }
-  };
+  switch (raidType) {
+    case 'RAID 1':
+      return rawCapacity * 0.5;
+    case 'RAID 5':
+      if (numberOfDisks < 3) return 0;
+      return (numberOfDisks - 1) * diskSize;
+    case 'RAID 6':
+      if (numberOfDisks < 4) return 0;
+      return (numberOfDisks - 2) * diskSize;
+    case 'RAID 10':
+      if (numberOfDisks < 4 || numberOfDisks % 2 !== 0) return 0;
+      return rawCapacity * 0.5;
+    default:
+      return 0;
+  }
 };
 
 const Gauge: React.FC<GaugeProps> = ({ value, max, label, unit, color, size = 200 }) => {
-  // Garantir que value e max sejam números válidos
   const safeValue = Number(value) || 0;
   const safeMax = Number(max) || 1;
   const percentage = Math.min(100, (safeValue / safeMax) * 100);
@@ -186,6 +101,7 @@ const Gauge: React.FC<GaugeProps> = ({ value, max, label, unit, color, size = 20
 
   return (
     <div className="flex flex-col items-center">
+      <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
         {/* Background circle */}
         <circle
@@ -207,13 +123,22 @@ const Gauge: React.FC<GaugeProps> = ({ value, max, label, unit, color, size = 20
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           className="transition-all duration-500"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         />
       </svg>
-      <div className="mt-4 text-center">
+        {/* Center text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="text-2xl font-bold">
-          {safeValue.toLocaleString()} {unit}
+            {safeValue.toLocaleString()}
+          </div>
+          <div className="text-sm text-slate-400">
+            {unit}
+          </div>
         </div>
-        <div className="text-sm text-slate-400">{label}</div>
+      </div>
+      <div className="mt-2 text-sm text-slate-400">
+        {label}
       </div>
     </div>
   );
@@ -225,14 +150,26 @@ const StorageCalculator = () => {
     raidType: 'RAID 5',
     diskSize: DISK_SIZES[0],
     numberOfDisks: 4,
-    storageType: 'SSD',
-    blockSize: BLOCK_SIZES[0],
-    workloadType: 'random_read',
-    readPercentage: 50,
-    latency: 0.1
+    storageType: 'SSD'
   });
 
-  const performanceMetrics = calculatePerformanceMetrics(config);
+  const [rawCapacity, setRawCapacity] = useState(0);
+  const [usableCapacity, setUsableCapacity] = useState(0);
+
+  useEffect(() => {
+    const raw = calculateRawCapacity(config.diskSize, config.numberOfDisks);
+    const usable = calculateUsableCapacity(config.diskSize, config.numberOfDisks, config.raidType);
+    
+    setRawCapacity(raw);
+    setUsableCapacity(usable);
+  }, [config]);
+
+  const handleConfigChange = (key: keyof StorageConfig, value: any) => {
+    setConfig(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
 
   const resetAllData = () => {
     if (window.confirm('Are you sure you want to reset all data? This action cannot be undone.')) {
@@ -241,24 +178,9 @@ const StorageCalculator = () => {
         raidType: 'RAID 5',
         diskSize: DISK_SIZES[0],
         numberOfDisks: 4,
-        storageType: 'SSD',
-        blockSize: BLOCK_SIZES[0],
-        workloadType: 'random_read',
-        readPercentage: 50,
-        latency: 0.1
+        storageType: 'SSD'
       });
     }
-  };
-
-  const calculateRawCapacity = () => {
-    if (!config.diskSize || !config.numberOfDisks) return 0;
-    return config.diskSize * config.numberOfDisks;
-  };
-
-  const calculateUsableCapacity = () => {
-    const rawCapacity = calculateRawCapacity();
-    if (!rawCapacity || !RAID_FACTORS[config.raidType]) return 0;
-    return rawCapacity * RAID_FACTORS[config.raidType];
   };
 
   const exportReport = async () => {
@@ -283,320 +205,127 @@ const StorageCalculator = () => {
   };
 
   return (
-    <div className="space-y-8" id="storage-report">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Calculadora de Armazenamento</h2>
-        <div className="flex gap-4">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Storage Calculator</h1>
           <button
             onClick={resetAllData}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
             Reset All
           </button>
-          <button
-            onClick={exportReport}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex items-center gap-2"
-          >
-            <Download size={20} />
-            Exportar PDF
-          </button>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-2">
-          <div className="grid grid-cols-2 lg:grid-cols-2 gap-4">
-            <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-400 mb-2">
-                <HardDrive size={20} />
-                <span>Armazenamento Total</span>
-              </div>
-              <div className="text-2xl font-bold">{formatStorage(calculateRawCapacity())}</div>
-              <div className="text-sm text-slate-400">Armazenamento Total</div>
-            </div>
-
-            <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-400 mb-2">
-                <Database size={20} />
-                <span>Armazenamento Utilizável</span>
-              </div>
-              <div className="text-2xl font-bold">{formatStorage(calculateUsableCapacity())}</div>
-              <div className="text-sm text-slate-400">Após RAID ({config.raidType})</div>
-            </div>
-
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-4">Volumetria de Armazenamento</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Input Section - Dynamic */}
+        <div className="lg:col-span-1 space-y-6">
                 <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                  <Gauge
-                    value={calculateRawCapacity()}
-                    max={Math.max(calculateRawCapacity(), config.diskSize * 24)}
-                    label="Armazenamento Total"
-                    unit="GB"
-                    color="#3b82f6"
-                    size={180}
-                  />
-                  <div className="mt-4 text-sm text-slate-400">
-                    <div>Capacidade Bruta: {formatStorage(calculateRawCapacity())}</div>
-                    <div>Discos: {config.numberOfDisks} x {config.diskSize} GB</div>
-                  </div>
-                </div>
-                <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                  <Gauge
-                    value={calculateUsableCapacity()}
-                    max={Math.max(calculateUsableCapacity(), config.diskSize * 24 * RAID_FACTORS[config.raidType])}
-                    label="Armazenamento Utilizável"
-                    unit="GB"
-                    color="#10b981"
-                    size={180}
-                  />
-                  <div className="mt-4 text-sm text-slate-400">
-                    <div>Capacidade Líquida: {formatStorage(calculateUsableCapacity())}</div>
-                    <div>RAID: {config.raidType} ({RAID_FACTORS[config.raidType] * 100}% utilizável)</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
-                <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                  <Gauge
-                    value={performanceMetrics.iops.total}
-                    max={STORAGE_TYPE_IOPS[config.storageType].base * config.numberOfDisks * 2}
-                    label="Total IOPS"
-                    unit="IOPS"
-                    color="#f59e0b"
-                    size={180}
-                  />
-                  <div className="mt-4 text-sm text-slate-400">
-                    <div>Leitura: {Math.round(performanceMetrics.iops.read).toLocaleString()} IOPS</div>
-                    <div>Escrita: {Math.round(performanceMetrics.iops.write).toLocaleString()} IOPS</div>
-                    <div className="mt-2">Total: {Math.round(performanceMetrics.iops.total).toLocaleString()} IOPS</div>
-                  </div>
-                </div>
-                <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-                  <Gauge
-                    value={performanceMetrics.throughput.total}
-                    max={performanceMetrics.iops.total * config.blockSize / 1024 * 2}
-                    label="Taxa de Transferência"
-                    unit="MB/s"
-                    color="#8b5cf6"
-                    size={180}
-                  />
-                  <div className="mt-4 text-sm text-slate-400">
-                    <div>Leitura: {Math.round(performanceMetrics.throughput.read)} MB/s</div>
-                    <div>Escrita: {Math.round(performanceMetrics.throughput.write)} MB/s</div>
-                    <div className="mt-2">Total: {Math.round(performanceMetrics.throughput.total)} MB/s</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-4">Detailed Metrics</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
-                    <Activity size={20} />
-                    <span>Total IOPS</span>
-                  </div>
-                  <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.total).toLocaleString()}</div>
-                  <div className="text-sm text-slate-400">IOPS Totais</div>
-                  <div className="text-xs text-slate-500">{Math.round(performanceMetrics.iops.perGB)} IOPS/GB</div>
-                </div>
-
-                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
-                    <Activity size={20} />
-                    <span>Read IOPS</span>
-                  </div>
-                  <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.read).toLocaleString()}</div>
-                  <div className="text-sm text-slate-400">IOPS de Leitura</div>
-                  <div className="text-xs text-slate-500">{Math.round(performanceMetrics.throughput.read)} MB/s</div>
-                </div>
-
-                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
-                    <Activity size={20} />
-                    <span>Write IOPS</span>
-                  </div>
-                  <div className="text-2xl font-bold">{Math.round(performanceMetrics.iops.write).toLocaleString()}</div>
-                  <div className="text-sm text-slate-400">IOPS de Escrita</div>
-                  <div className="text-xs text-slate-500">{Math.round(performanceMetrics.throughput.write)} MB/s</div>
-                </div>
-
-                <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-                  <div className="flex items-center gap-2 text-slate-400 mb-2">
-                    <Activity size={20} />
-                    <span>Latência</span>
-                  </div>
-                  <div className="text-2xl font-bold">{performanceMetrics.latency.average.toFixed(2)} ms</div>
-                  <div className="text-sm text-slate-400">Latência Média</div>
-                  <div className="text-xs text-slate-500">Máx: {performanceMetrics.latency.maximum.toFixed(2)} ms</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
-          <h3 className="text-lg font-semibold mb-6">Configuração de Armazenamento</h3>
-          
+            <h3 className="text-lg font-semibold mb-4">Storage Configuration</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Disk Size
-              </label>
-              <select
-                value={config.diskSize}
-                onChange={(e) => setConfig({ ...config, diskSize: Number(e.target.value) })}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-              >
-                {DISK_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size} GB
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Number of Disks
-              </label>
-              <input
-                type="number"
-                value={config.numberOfDisks}
-                onChange={(e) => setConfig({ ...config, numberOfDisks: Number(e.target.value) })}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="2"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Tipo de RAID
-              </label>
-              <select
-                value={config.raidType}
-                onChange={(e) => setConfig({ ...config, raidType: e.target.value as StorageConfig['raidType'] })}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-              >
-                <option value="RAID1">RAID-1 (Espelhamento)</option>
-                <option value="RAID5">RAID-5 (Paridade Simples)</option>
-                <option value="RAID6">RAID-6 (Paridade Dupla)</option>
-                <option value="RAID10">RAID-10 (Espelhamento + Distribuição)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Tipo de Armazenamento
-              </label>
+                <label className="block text-sm text-slate-400 mb-1">Storage Type</label>
               <select
                 value={config.storageType}
-                onChange={(e) => setConfig({ ...config, storageType: e.target.value as StorageConfig['storageType'] })}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
+                  onChange={(e) => handleConfigChange('storageType', e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded px-3 py-2 text-white"
               >
                 <option value="SSD">SSD</option>
                 <option value="HDD">HDD</option>
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Block Size (KB)
-              </label>
+                <label className="block text-sm text-slate-400 mb-1">RAID Type</label>
               <select
-                value={config.blockSize}
-                onChange={(e) => setConfig({ ...config, blockSize: Number(e.target.value) })}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-              >
-                {BLOCK_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size} KB
-                  </option>
-                ))}
+                  value={config.raidType}
+                  onChange={(e) => handleConfigChange('raidType', e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded px-3 py-2 text-white"
+                >
+                  <option value="RAID 1">RAID 1</option>
+                  <option value="RAID 5">RAID 5</option>
+                  <option value="RAID 6">RAID 6</option>
+                  <option value="RAID 10">RAID 10</option>
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Tipo de Carga de Trabalho
-              </label>
+                <label className="block text-sm text-slate-400 mb-1">Disk Size</label>
               <select
-                value={config.workloadType}
-                onChange={(e) => setConfig({ ...config, workloadType: e.target.value as StorageConfig['workloadType'] })}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-              >
-                <option value="OLTP">OLTP (Transacional)</option>
-                <option value="OLAP">OLAP (Analítico)</option>
-                <option value="Mixed">Mista</option>
+                  value={config.diskSize}
+                  onChange={(e) => handleConfigChange('diskSize', Number(e.target.value))}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded px-3 py-2 text-white"
+                >
+                  {DISK_SIZES.map(size => (
+                    <option key={size} value={size}>{formatStorage(size)}</option>
+                  ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Read/Write Distribution
-              </label>
-              <div className="flex items-center gap-4">
+                <label className="block text-sm text-slate-400 mb-1">Number of Disks</label>
                 <input
-                  type="range"
-                  value={config.readPercentage}
-                  onChange={(e) => setConfig({ ...config, readPercentage: Number(e.target.value) })}
-                  className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                min="0"
-                max="100"
-                  step="1"
+                  type="number"
+                  min={config.raidType === 'RAID 5' ? 3 : config.raidType === 'RAID 6' ? 4 : config.raidType === 'RAID 10' ? 4 : 2}
+                  value={config.numberOfDisks}
+                  onChange={(e) => handleConfigChange('numberOfDisks', Number(e.target.value))}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded px-3 py-2 text-white"
                 />
-                <span className="text-sm text-slate-300 min-w-[4rem] text-right">
-                  {config.readPercentage}%
-                </span>
               </div>
-              <div className="flex justify-between text-xs text-slate-400 mt-1">
-                <span>Write: {100 - config.readPercentage}%</span>
-                <span>Read: {config.readPercentage}%</span>
+            </div>
               </div>
             </div>
 
+        {/* Results Section - Static */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Storage Metrics */}
+          <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
+            <h3 className="text-lg font-semibold mb-4">Volumetria de Armazenamento</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Latência (ms)
-              </label>
-              <input
-                type="number"
-                value={config.latency}
-                onChange={(e) => setConfig({ ...config, latency: Number(e.target.value) })}
-                className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
-                min="0"
-                max="100"
-              />
+                <Gauge
+                  value={rawCapacity}
+                  max={Math.max(rawCapacity, config.diskSize * 24)}
+                  label="Armazenamento Total"
+                  unit={rawCapacity >= 1000 ? "TB" : "GB"}
+                  color="#3b82f6"
+                  size={180}
+                />
+                <div className="mt-4 text-sm text-slate-400">
+                  <div className="font-medium">Capacidade Bruta: {formatStorage(rawCapacity)}</div>
+                  <div>Discos: {config.numberOfDisks} x {formatStorage(config.diskSize)}</div>
+                  <div>Total: {formatStorage(config.numberOfDisks * config.diskSize)}</div>
             </div>
-
-            <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-              <h4 className="text-sm font-medium text-slate-300 mb-2">Diretrizes de Performance</h4>
-              <div className="space-y-2 text-sm text-slate-400">
-                <p>SSD: 10.000+ IOPS, 0,1ms latência</p>
-                <p>HDD: 100-200 IOPS, 10ms latência</p>
-                <p>RAID 1: Melhor para performance de leitura</p>
-                <p>RAID 5: Bom equilíbrio, penalidade de escrita</p>
-                <p>RAID 6: Maior proteção, menor performance</p>
-                <p>RAID 10: Melhor performance, 50% de capacidade</p>
+              </div>
+              <div>
+                <Gauge
+                  value={usableCapacity}
+                  max={Math.max(usableCapacity, config.diskSize * 24 * RAID_FACTORS[config.raidType])}
+                  label="Armazenamento Utilizável"
+                  unit={usableCapacity >= 1000 ? "TB" : "GB"}
+                  color="#10b981"
+                  size={180}
+                />
+                <div className="mt-4 text-sm text-slate-400">
+                  <div className="font-medium">Capacidade Líquida: {formatStorage(usableCapacity)}</div>
+                  <div>RAID: {config.raidType}</div>
+                  <div>Fator de Eficiência: {
+                    config.raidType === 'RAID 5' ? `${((config.numberOfDisks - 1) / config.numberOfDisks * 100).toFixed(1)}%` :
+                    config.raidType === 'RAID 6' ? `${((config.numberOfDisks - 2) / config.numberOfDisks * 100).toFixed(1)}%` :
+                    `${RAID_FACTORS[config.raidType] * 100}%`
+                  }</div>
+                  <div className="mt-2">
+                    <div className="font-medium">Cálculo Líquido:</div>
+                    {config.raidType === 'RAID 5' && (
+                      <div>{(config.numberOfDisks - 1)} discos x {formatStorage(config.diskSize)} = {formatStorage(usableCapacity)}</div>
+                    )}
+                    {config.raidType === 'RAID 6' && (
+                      <div>{(config.numberOfDisks - 2)} discos x {formatStorage(config.diskSize)} = {formatStorage(usableCapacity)}</div>
+                    )}
+                    {config.raidType === 'RAID 1' && (
+                      <div>{config.numberOfDisks} discos / 2 = {formatStorage(usableCapacity)}</div>
+                    )}
+                    {config.raidType === 'RAID 10' && (
+                      <div>{config.numberOfDisks} discos / 2 = {formatStorage(usableCapacity)}</div>
+                    )}
               </div>
             </div>
-
-            <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-              <h4 className="text-sm font-medium text-slate-300 mb-2">Detalhes da Configuração RAID</h4>
-              <div className="space-y-2 text-sm text-slate-400">
-                <p>RAID 1: 50% de capacidade utilizável (espelhamento)</p>
-                <p>RAID 5: 75% de capacidade utilizável (paridade simples)</p>
-                <p>RAID 6: 67% de capacidade utilizável (paridade dupla)</p>
-                <p>RAID 10: 50% de capacidade utilizável (espelhamento + distribuição)</p>
               </div>
             </div>
           </div>

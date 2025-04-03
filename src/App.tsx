@@ -11,8 +11,16 @@ import { Desktop, Cpu, HardDrive, Globe, Database, ArrowRight, ChartLine, Users,
 import { auth0Config } from './auth0-config'
 
 function AppContent() {
-  const { isAuthenticated, loginWithRedirect, logout, user } = useAuth0();
+  const { isAuthenticated, loginWithRedirect, logout, user, isLoading } = useAuth0();
   const [activeTab, setActiveTab] = useState<'physical' | 'virtual' | 'backup' | 'storage' | 'vsan'>('physical');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-950 to-blue-900 text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -56,12 +64,15 @@ function AppContent() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="p-4 bg-blue-800/20 rounded-lg backdrop-blur-sm border border-blue-500/30 hover:border-blue-500/50 transition-all duration-300">
                 <Shield size={24} className="mx-auto text-blue-400 mb-2" />
+                <p className="text-sm text-slate-300">Segurança</p>
               </div>
               <div className="p-4 bg-blue-800/20 rounded-lg backdrop-blur-sm border border-blue-500/30 hover:border-blue-500/50 transition-all duration-300">
                 <ChartLine size={24} className="mx-auto text-blue-400 mb-2" />
+                <p className="text-sm text-slate-300">Precisão</p>
               </div>
               <div className="p-4 bg-blue-800/20 rounded-lg backdrop-blur-sm border border-blue-500/30 hover:border-blue-500/50 transition-all duration-300">
                 <Users size={24} className="mx-auto text-blue-400 mb-2" />
+                <p className="text-sm text-slate-300">Colaboração</p>
               </div>
             </div>
 
@@ -86,12 +97,20 @@ function AppContent() {
         <div className="flex justify-between items-center mb-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-2">InfiniSizing</h1>
+            {user && (
+              <p className="text-sm text-slate-400">
+                Olá, {user.name || user.email}
+              </p>
+            )}
           </div>
           <div className="auth-buttons">
             {isAuthenticated && (
-              <div className="user-info">
-                <span className="welcome-text">Bem Vindo ao InfiniSizing</span>
-                <button onClick={() => logout()} className="logout-button">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => logout()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-white transition-all duration-300 hover:scale-105 backdrop-blur-sm border border-red-500/30 hover:border-red-500/50"
+                >
+                  <SignOut size={20} />
                   Sair
                 </button>
               </div>
@@ -100,7 +119,7 @@ function AppContent() {
         </div>
         
         {/* Top Navigation */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
           <button
             onClick={() => setActiveTab('physical')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
@@ -125,10 +144,10 @@ function AppContent() {
           </button>
           <button
             onClick={() => setActiveTab('storage')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-base font-medium transition-all duration-300 transform hover:scale-105 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'storage'
-                ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
-                : 'bg-slate-800/50 hover:bg-slate-700/50'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <HardDrive size={20} />
@@ -136,10 +155,10 @@ function AppContent() {
           </button>
           <button
             onClick={() => setActiveTab('vsan')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-base font-medium transition-all duration-300 transform hover:scale-105 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'vsan'
-                ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
-                : 'bg-slate-800/50 hover:bg-slate-700/50'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Globe size={20} />
@@ -147,10 +166,10 @@ function AppContent() {
           </button>
           <button
             onClick={() => setActiveTab('backup')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-base font-medium transition-all duration-300 transform hover:scale-105 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'backup'
-                ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
-                : 'bg-slate-800/50 hover:bg-slate-700/50'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Database size={20} />

@@ -286,8 +286,8 @@ const VsanCalculator = () => {
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
     
-    const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
-    const cpuUtilization = (totalResources.usableCpu / (totalAvailableCores * vmCoreRatio)) * 100;
+    const totalAvailableCores = serverReqs.total * selectedProcessor.cores * processorsPerServer;
+    const cpuUtilization = (totalResources.usableCpu / totalAvailableCores) * 100;
     
     return cpuUtilization;
   };
@@ -306,7 +306,8 @@ const VsanCalculator = () => {
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
     
-    const storageUtilization = (totalResources.usableDisk / (serverReqs.total * serverReqs.storagePerServer)) * 100;
+    const totalAvailableStorage = serverReqs.total * serverReqs.storagePerServer;
+    const storageUtilization = (totalResources.usableDisk / totalAvailableStorage) * 100;
     
     return storageUtilization;
   };
@@ -838,6 +839,8 @@ const VsanCalculator = () => {
                     <div>
                       <h3 className="text-lg font-semibold">CPU</h3>
                       <p className="text-3xl font-bold mt-1">{cpuUtilization.toFixed(1)}%</p>
+                      <p className="text-[10px] text-slate-400">Threshold: {utilizationThreshold}%</p>
+                      <p className="text-[10px] text-slate-400">vCPU:pCPU Ratio: {vmCoreRatio}:1</p>
                     </div>
                   </div>
                 </div>
@@ -880,7 +883,7 @@ const VsanCalculator = () => {
                   </div>
                 </div>
 
-                {cpuUtilization > 80 && (
+                {cpuUtilization > utilizationThreshold && (
                   <div className="mt-4 bg-slate-900/50 text-slate-200 p-3 rounded-lg flex items-center gap-2">
                     <AlertTriangle size={16} />
                     <p className="text-[10px]">High utilization!</p>
@@ -896,6 +899,9 @@ const VsanCalculator = () => {
                     <div>
                       <h3 className="text-lg font-semibold">Memory</h3>
                       <p className="text-3xl font-bold mt-1">{memoryUtilization.toFixed(1)}%</p>
+                      <p className="text-[10px] text-slate-400">Threshold: {utilizationThreshold}%</p>
+                      <p className="text-[10px] text-slate-400">Total Memory: {formatStorage(totalResources.totalMemory)}</p>
+                      <p className="text-[10px] text-slate-400">Servers: {servers.length}</p>
                     </div>
                   </div>
                 </div>
@@ -938,7 +944,7 @@ const VsanCalculator = () => {
                   </div>
                 </div>
 
-                {memoryUtilization > 80 && (
+                {memoryUtilization > utilizationThreshold && (
                   <div className="mt-4 bg-slate-900/50 text-slate-200 p-3 rounded-lg flex items-center gap-2">
                     <AlertTriangle size={16} />
                     <p className="text-[10px]">High utilization!</p>
@@ -954,6 +960,7 @@ const VsanCalculator = () => {
                     <div>
                       <h3 className="text-lg font-semibold">Storage</h3>
                       <p className="text-3xl font-bold mt-1">{storageUtilization.toFixed(1)}%</p>
+                      <p className="text-[10px] text-slate-400">Threshold: {utilizationThreshold}%</p>
                     </div>
                   </div>
                 </div>
@@ -996,7 +1003,7 @@ const VsanCalculator = () => {
                   </div>
                 </div>
 
-                {storageUtilization > 80 && (
+                {storageUtilization > utilizationThreshold && (
                   <div className="mt-4 bg-slate-900/50 text-slate-200 p-3 rounded-lg flex items-center gap-2">
                     <AlertTriangle size={16} />
                     <p className="text-[10px]">High utilization!</p>
