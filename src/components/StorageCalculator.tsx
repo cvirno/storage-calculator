@@ -175,7 +175,10 @@ const calculatePerformanceMetrics = (config: StorageConfig): PerformanceMetrics 
 };
 
 const Gauge: React.FC<GaugeProps> = ({ value, max, label, unit, color, size = 200 }) => {
-  const percentage = Math.min(100, (value / max) * 100);
+  // Garantir que value e max sejam números válidos
+  const safeValue = Number(value) || 0;
+  const safeMax = Number(max) || 1;
+  const percentage = Math.min(100, (safeValue / safeMax) * 100);
   const strokeWidth = size * 0.1;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -208,7 +211,7 @@ const Gauge: React.FC<GaugeProps> = ({ value, max, label, unit, color, size = 20
       </svg>
       <div className="mt-4 text-center">
         <div className="text-2xl font-bold">
-          {value.toLocaleString()} {unit}
+          {safeValue.toLocaleString()} {unit}
         </div>
         <div className="text-sm text-slate-400">{label}</div>
       </div>
@@ -248,11 +251,13 @@ const StorageCalculator = () => {
   };
 
   const calculateRawCapacity = () => {
+    if (!config.diskSize || !config.numberOfDisks) return 0;
     return config.diskSize * config.numberOfDisks;
   };
 
   const calculateUsableCapacity = () => {
     const rawCapacity = calculateRawCapacity();
+    if (!rawCapacity || !RAID_FACTORS[config.raidType]) return 0;
     return rawCapacity * RAID_FACTORS[config.raidType];
   };
 
@@ -328,22 +333,30 @@ const StorageCalculator = () => {
                 <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
                   <Gauge
                     value={calculateRawCapacity()}
-                    max={config.diskSize * 24} // Assuming max 24 disks
+                    max={Math.max(calculateRawCapacity(), config.diskSize * 24)}
                     label="Armazenamento Total"
                     unit="GB"
                     color="#3b82f6"
                     size={180}
                   />
+                  <div className="mt-4 text-sm text-slate-400">
+                    <div>Capacidade Bruta: {formatStorage(calculateRawCapacity())}</div>
+                    <div>Discos: {config.numberOfDisks} x {config.diskSize} GB</div>
+                  </div>
                 </div>
                 <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl">
                   <Gauge
                     value={calculateUsableCapacity()}
-                    max={config.diskSize * 24 * RAID_FACTORS[config.raidType]}
+                    max={Math.max(calculateUsableCapacity(), config.diskSize * 24 * RAID_FACTORS[config.raidType])}
                     label="Armazenamento Utilizável"
                     unit="GB"
                     color="#10b981"
                     size={180}
                   />
+                  <div className="mt-4 text-sm text-slate-400">
+                    <div>Capacidade Líquida: {formatStorage(calculateUsableCapacity())}</div>
+                    <div>RAID: {config.raidType} ({RAID_FACTORS[config.raidType] * 100}% utilizável)</div>
+                  </div>
                 </div>
               </div>
             </div>
