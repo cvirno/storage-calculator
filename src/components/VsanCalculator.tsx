@@ -228,10 +228,14 @@ const VsanCalculator = () => {
 
     const totalResources = calculateTotalResources();
     
-    // Calcula servidores necessários para computação
+    // Calcula servidores necessários para computação (CPU)
     const requiredCores = Math.ceil(totalResources.totalCpu / vmCoreRatio);
     const coresPerServer = selectedProcessor.cores * processorsPerServer;
     const serversForCompute = Math.ceil(requiredCores / coresPerServer);
+    
+    // Calcula servidores necessários para memória
+    const memoryPerServer = 1024; // 1TB por servidor
+    const serversForMemory = Math.ceil(totalResources.totalMemory / memoryPerServer);
     
     // Calcula servidores necessários para armazenamento
     const totalStorageGB = totalResources.totalDisk;
@@ -246,8 +250,8 @@ const VsanCalculator = () => {
     const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
     const serversForStorage = Math.ceil(totalStorageGB / usableStoragePerServer);
     
-    // Pega o maior número de servidores necessários
-    let servers = Math.max(serversForCompute, serversForStorage);
+    // Pega o maior número de servidores necessários entre CPU, memória e armazenamento
+    let servers = Math.max(serversForCompute, serversForMemory, serversForStorage);
     
     // Adiciona N+1 se necessário
     if (considerNPlusOne) {
@@ -257,6 +261,7 @@ const VsanCalculator = () => {
     return {
       total: servers,
       forCompute: serversForCompute,
+      forMemory: serversForMemory,
       forStorage: serversForStorage,
       storagePerServer: usableStoragePerServer
     };
@@ -1111,6 +1116,11 @@ const VsanCalculator = () => {
             <div className="bg-slate-600/30 p-4 rounded-lg">
               <p className="text-slate-300">Servidores Recomendados</p>
               <p className="text-2xl font-bold text-white">{result.recommendedServers}</p>
+              <div className="text-sm text-slate-400 mt-2">
+                <p>Computação: {serverRequirements.forCompute}</p>
+                <p>Memória: {serverRequirements.forMemory}</p>
+                <p>Armazenamento: {serverRequirements.forStorage}</p>
+              </div>
             </div>
           </div>
         </div>
