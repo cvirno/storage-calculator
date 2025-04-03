@@ -186,11 +186,29 @@ const VsanCalculator = () => {
     setVms(newVMs);
   };
 
+  // Efeito para atualizar os servidores quando as VMs mudarem
+  useEffect(() => {
+    // Calcula os totais das VMs
+    const totalVCPUs = vms.reduce((sum, vm) => sum + (vm.vCPUs * vm.count), 0);
+    const totalMemory = vms.reduce((sum, vm) => sum + (vm.memory * vm.count), 0);
+    const totalStorage = vms.reduce((sum, vm) => sum + (vm.storage * vm.count), 0);
+
+    // Atualiza o primeiro servidor com os totais
+    setServers([{
+      id: 1,
+      cpu: totalVCPUs,
+      memory: totalMemory,
+      disk: totalStorage
+    }]);
+  }, [vms]);
+
   const calculateTotalResources = () => {
+    // Calcula os totais dos servidores
     const totalCpu = servers.reduce((sum, server) => sum + server.cpu, 0);
     const totalMemory = servers.reduce((sum, server) => sum + server.memory, 0);
     const totalDisk = servers.reduce((sum, server) => sum + server.disk, 0);
 
+    // Calcula os valores utilizáveis baseados no threshold
     const usableCpu = totalCpu * (utilizationThreshold / 100);
     const usableMemory = totalMemory * (utilizationThreshold / 100);
     const usableDisk = totalDisk * (utilizationThreshold / 100);
@@ -210,27 +228,28 @@ const VsanCalculator = () => {
 
     const totalResources = calculateTotalResources();
     
-    // Calculate servers needed for compute
+    // Calcula servidores necessários para computação
     const requiredCores = Math.ceil(totalResources.totalCpu / vmCoreRatio);
     const coresPerServer = selectedProcessor.cores * processorsPerServer;
     const serversForCompute = Math.ceil(requiredCores / coresPerServer);
     
-    // Calculate servers needed for storage
+    // Calcula servidores necessários para armazenamento
     const totalStorageGB = totalResources.totalDisk;
     let usableStoragePerDisk = serverConfig.diskSize;
 
-    // Apply vSAN FTT RAID factor
+    // Aplica o fator de RAID do vSAN
     usableStoragePerDisk *= FTT_RAID_FACTORS[serverConfig.ftt][serverConfig.raidType];
 
-    // Apply data reduction ratio
+    // Aplica a taxa de redução de dados
     usableStoragePerDisk *= serverConfig.dataReductionRatio;
 
     const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
     const serversForStorage = Math.ceil(totalStorageGB / usableStoragePerServer);
     
-    // Get the maximum number of servers needed based on all resources
+    // Pega o maior número de servidores necessários
     let servers = Math.max(serversForCompute, serversForStorage);
     
+    // Adiciona N+1 se necessário
     if (considerNPlusOne) {
       servers += 1;
     }
@@ -347,23 +366,17 @@ const VsanCalculator = () => {
     setIsCalculating(true);
     // Simulando um delay para mostrar o loading
     setTimeout(() => {
-      const totalStorage = servers.reduce((sum, server) => sum + server.disk, 0);
-      const totalMemory = servers.reduce((sum, server) => sum + server.memory, 0);
-      const totalCpu = servers.reduce((sum, server) => sum + server.cpu, 0);
+      const totalResources = calculateTotalResources();
+      const serverReqs = calculateRequiredServers();
       const totalRawStorage = calculateTotalRawStorage();
       const netStorage = calculateNetStorage(totalRawStorage, serverConfig.ftt, serverConfig.dataReductionRatio, serverConfig.raidType);
       const effectiveCapacity = netStorage * (utilizationThreshold / 100);
 
-      // Cálculo simplificado para exemplo
-      const recommendedServers = Math.ceil(
-        (totalStorage * (100 / utilizationThreshold)) / 1000
-      );
-
       setResult({
-        totalStorage,
-        totalMemory,
-        totalCpu,
-        recommendedServers,
+        totalStorage: totalResources.totalDisk,
+        totalMemory: totalResources.totalMemory,
+        totalCpu: totalResources.totalCpu,
+        recommendedServers: serverReqs.total,
         rawStorage: totalRawStorage,
         netStorage: netStorage,
         effectiveCapacity: effectiveCapacity
