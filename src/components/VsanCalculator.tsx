@@ -29,6 +29,15 @@ const DISK_SIZES = [
   24576,    // 24 TB
 ];
 
+const MEMORY_SIZES = [
+  32,   // 32 GB
+  64,   // 64 GB
+  128,  // 128 GB
+  256   // 256 GB
+];
+
+const MAX_MEMORY_SLOTS = 32;
+
 const DATA_REDUCTION_RATIOS = [
   1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 1.9, 2.0
 ];
@@ -59,6 +68,8 @@ interface ServerConfig {
   ftt: 1 | 2;
   raidType: 'RAID1' | 'RAID5';
   dataReductionRatio: number;
+  memorySize: number;
+  memorySlots: number;
 }
 
 interface Server {
@@ -125,7 +136,9 @@ const VsanCalculator = () => {
     diskSize: DISK_SIZES[0],
     ftt: 1,
     raidType: 'RAID5',
-    dataReductionRatio: 1.0
+    dataReductionRatio: 1.0,
+    memorySize: 64,
+    memorySlots: 2
   });
   const [servers, setServers] = useState<Server[]>([{ id: 1, cpu: 0, memory: 0, disk: 0 }]);
   const [utilizationThreshold, setUtilizationThreshold] = useState(95);
@@ -224,7 +237,7 @@ const VsanCalculator = () => {
   };
 
   const calculateRequiredServers = () => {
-    if (!selectedProcessor) return { total: 0, forCompute: 0, forStorage: 0, storagePerServer: 0 };
+    if (!selectedProcessor) return { total: 0, forCompute: 0, forMemory: 0, forStorage: 0, storagePerServer: 0 };
 
     const totalResources = calculateTotalResources();
     
@@ -234,7 +247,7 @@ const VsanCalculator = () => {
     const serversForCompute = Math.ceil(requiredCores / coresPerServer);
     
     // Calcula servidores necessários para memória
-    const memoryPerServer = 1024; // 1TB por servidor
+    const memoryPerServer = serverConfig.memorySize * serverConfig.memorySlots;
     const serversForMemory = Math.ceil(totalResources.totalMemory / memoryPerServer);
     
     // Calcula servidores necessários para armazenamento
@@ -337,7 +350,9 @@ const VsanCalculator = () => {
         diskSize: DISK_SIZES[0],
         ftt: 1,
         raidType: 'RAID5',
-        dataReductionRatio: 1.0
+        dataReductionRatio: 1.0,
+        memorySize: 64,
+        memorySlots: 2
       });
 
       // Reset other settings
@@ -711,6 +726,52 @@ const VsanCalculator = () => {
               <label htmlFor="nPlusOne" className="text-[9px] text-slate-300">
                 Consider N+1 redundancy
               </label>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-medium text-slate-300 mb-1">
+                  Tamanho do Pente de Memória
+                </label>
+                <select
+                  value={serverConfig.memorySize}
+                  onChange={(e) => setServerConfig({ ...serverConfig, memorySize: Number(e.target.value) })}
+                  className="w-full bg-slate-700 rounded-lg px-4 py-2 text-[10px]"
+                >
+                  {MEMORY_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size} GB
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-medium text-slate-300 mb-1">
+                  Número de Pentes de Memória
+                </label>
+                <input
+                  type="number"
+                  value={serverConfig.memorySlots}
+                  onChange={(e) => {
+                    const value = Math.min(Math.max(1, parseInt(e.target.value)), MAX_MEMORY_SLOTS);
+                    setServerConfig({ ...serverConfig, memorySlots: value });
+                  }}
+                  className="w-full bg-slate-700 rounded-lg px-4 py-2 text-[10px]"
+                  min="1"
+                  max={MAX_MEMORY_SLOTS}
+                />
+                <p className="text-[8px] text-slate-400 mt-1">
+                  Máximo {MAX_MEMORY_SLOTS} pentes por servidor
+                </p>
+              </div>
+
+              <div className="bg-slate-700/50 p-3 rounded-lg">
+                <p className="text-[9px] text-slate-400">Memória Total por Servidor</p>
+                <p className="text-lg font-bold text-white">
+                  {formatStorage(serverConfig.memorySize * serverConfig.memorySlots)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
