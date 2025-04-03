@@ -101,9 +101,11 @@ const formatStorageSize = (gb: number): string => {
   return `${gb.toFixed(2)} GB`;
 };
 
-const calculateNetStorage = (rawStorage: number, ftt: number, dataReductionRatio: number): number => {
+const calculateNetStorage = (rawStorage: number, ftt: 1 | 2, dataReductionRatio: number, raidType: 'RAID1' | 'RAID5'): number => {
   const fttMultiplier = ftt + 1;
-  const netStorage = (rawStorage / fttMultiplier) * dataReductionRatio;
+  // Aplicar o fator de RAID
+  const raidFactor = FTT_RAID_FACTORS[ftt][raidType];
+  const netStorage = (rawStorage / fttMultiplier) * dataReductionRatio * raidFactor;
   return netStorage;
 };
 
@@ -329,7 +331,7 @@ const VsanCalculator = () => {
   useEffect(() => {
     if (result) {
       const totalRawStorage = calculateTotalRawStorage();
-      const netStorage = calculateNetStorage(totalRawStorage, serverConfig.ftt, serverConfig.dataReductionRatio);
+      const netStorage = calculateNetStorage(totalRawStorage, serverConfig.ftt, serverConfig.dataReductionRatio, serverConfig.raidType);
       const effectiveCapacity = netStorage * (utilizationThreshold / 100);
 
       setResult(prev => ({
@@ -349,7 +351,7 @@ const VsanCalculator = () => {
       const totalMemory = servers.reduce((sum, server) => sum + server.memory, 0);
       const totalCpu = servers.reduce((sum, server) => sum + server.cpu, 0);
       const totalRawStorage = calculateTotalRawStorage();
-      const netStorage = calculateNetStorage(totalRawStorage, serverConfig.ftt, serverConfig.dataReductionRatio);
+      const netStorage = calculateNetStorage(totalRawStorage, serverConfig.ftt, serverConfig.dataReductionRatio, serverConfig.raidType);
       const effectiveCapacity = netStorage * (utilizationThreshold / 100);
 
       // Cálculo simplificado para exemplo
@@ -1004,7 +1006,8 @@ const VsanCalculator = () => {
               {formatStorage(calculateNetStorage(
                 calculateTotalRawStorage(),
                 serverConfig.ftt,
-                serverConfig.dataReductionRatio
+                serverConfig.dataReductionRatio,
+                serverConfig.raidType
               ))}
             </p>
           </div>
