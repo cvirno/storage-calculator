@@ -133,6 +133,9 @@ const VsanCalculator = () => {
     totalMemory: number;
     totalCpu: number;
     recommendedServers: number;
+    rawStorage: number;
+    netStorage: number;
+    effectiveCapacity: number;
   } | null>(null);
 
   useEffect(() => {
@@ -322,6 +325,22 @@ const VsanCalculator = () => {
     }
   };
 
+  // Efeito para atualizar os Storage Metrics quando houver mudanças
+  useEffect(() => {
+    if (result) {
+      const totalRawStorage = calculateTotalRawStorage();
+      const netStorage = calculateNetStorage(totalRawStorage, serverConfig.ftt, serverConfig.dataReductionRatio);
+      const effectiveCapacity = netStorage * (utilizationThreshold / 100);
+
+      setResult(prev => ({
+        ...prev!,
+        rawStorage: totalRawStorage,
+        netStorage: netStorage,
+        effectiveCapacity: effectiveCapacity
+      }));
+    }
+  }, [serverConfig.ftt, serverConfig.raidType, serverConfig.dataReductionRatio, utilizationThreshold]);
+
   const calculateVsan = () => {
     setIsCalculating(true);
     // Simulando um delay para mostrar o loading
@@ -329,6 +348,9 @@ const VsanCalculator = () => {
       const totalStorage = servers.reduce((sum, server) => sum + server.disk, 0);
       const totalMemory = servers.reduce((sum, server) => sum + server.memory, 0);
       const totalCpu = servers.reduce((sum, server) => sum + server.cpu, 0);
+      const totalRawStorage = calculateTotalRawStorage();
+      const netStorage = calculateNetStorage(totalRawStorage, serverConfig.ftt, serverConfig.dataReductionRatio);
+      const effectiveCapacity = netStorage * (utilizationThreshold / 100);
 
       // Cálculo simplificado para exemplo
       const recommendedServers = Math.ceil(
@@ -339,7 +361,10 @@ const VsanCalculator = () => {
         totalStorage,
         totalMemory,
         totalCpu,
-        recommendedServers
+        recommendedServers,
+        rawStorage: totalRawStorage,
+        netStorage: netStorage,
+        effectiveCapacity: effectiveCapacity
       });
       setIsCalculating(false);
     }, 1000);
