@@ -5,6 +5,7 @@ import RackVisualization from './RackVisualization';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { supabase } from '../lib/supabase';
+import { mockProcessors } from '../lib/mockData';
 
 interface Processor {
   id: string;
@@ -75,15 +76,16 @@ const ServerCalculator = () => {
   const [editingServer, setEditingServer] = useState<string | null>(null);
   const [rackView, setRackView] = useState<'front' | 'rear'>('front');
   const [considerNPlusOne, setConsiderNPlusOne] = useState(false);
-  const [processors, setProcessors] = useState<Processor[]>([]);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor>(mockProcessors[0]);
+  const [isLoading, setIsLoading] = useState(true);
   const [newServer, setNewServer] = useState<Omit<Server, 'id'>>({
     name: '',
     quantity: 1,
     rackUnits: 1,
-    processorId: '',
+    processorId: mockProcessors[0].id,
     processors: 1,
-    coresPerProcessor: 0,
+    coresPerProcessor: mockProcessors[0].cores,
     disks: 1,
     diskSize: DISK_SIZES[0],
     raidType: 'RAID 1'
@@ -91,25 +93,32 @@ const ServerCalculator = () => {
 
   useEffect(() => {
     const fetchProcessors = async () => {
-      const { data, error } = await supabase
-        .from('processors')
-        .select('*')
-        .order('generation', { ascending: true })
-        .order('spec_int_base', { ascending: false });
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('processors')
+          .select('*')
+          .order('generation', { ascending: false })
+          .order('spec_int_base', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching processors:', error);
-        return;
-      }
+        if (error) {
+          console.error('Error fetching processors:', error);
+          return;
+        }
 
-      setProcessors(data);
-      if (data.length > 0) {
-        setSelectedProcessor(data[0]);
-        setNewServer(prev => ({
-          ...prev,
-          processorId: data[0].id,
-          coresPerProcessor: data[0].cores
-        }));
+        if (data && data.length > 0) {
+          setProcessors(data);
+          setSelectedProcessor(data[0]);
+          setNewServer(prev => ({
+            ...prev,
+            processorId: data[0].id,
+            coresPerProcessor: data[0].cores
+          }));
+        }
+      } catch (error) {
+        console.error('Error in fetchProcessors:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -223,7 +232,7 @@ const ServerCalculator = () => {
     { name: 'Armazenamento Utilizável', value: servers.reduce((acc, server) => acc + calculateTotalStorage(server), 0) }
   ];
 
-  if (!selectedProcessor) {
+  if (isLoading) {
     return <div>Loading processors...</div>;
   }
 

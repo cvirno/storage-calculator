@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InfiniSizing - Teste</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #0f172a;
+      color: white;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #1e293b;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      color: #60a5fa;
+      text-align: center;
+    }
+    p {
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+    .info-box {
+      background-color: #334155;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 20px;
+    }
+    .button {
+      display: inline-block;
+      background-color: #3b82f6;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      text-decoration: none;
+      margin-top: 20px;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>InfiniSizing - Teste</h1>
+    <p>Esta página foi carregada diretamente no navegador, sem necessidade de um servidor.</p>
+    <p>Se você consegue ver esta página, significa que o navegador está funcionando corretamente.</p>
+    
+    <div class="info-box">
+      <h2>Informações do Sistema</h2>
+      <p><strong>Navegador:</strong> <span id="browser-info">Carregando...</span></p>
+      <p><strong>Sistema Operacional:</strong> <span id="os-info">Carregando...</span></p>
+      <p><strong>Resolução da Tela:</strong> <span id="screen-info">Carregando...</span></p>
+    </div>
+    
+    <p>Para acessar a aplicação completa, você precisa iniciar o servidor de desenvolvimento.</p>
+    <p>Tente os seguintes passos:</p>
+    <ol>
+      <li>Execute o arquivo <code>start-vite.bat</code> na pasta do projeto</li>
+      <li>Acesse a URL indicada no terminal (geralmente http://localhost:3000)</li>
+    </ol>
+  </div>
+
+  <script>
+    // Exibir informações do navegador
+    document.getElementById('browser-info').textContent = navigator.userAgent;
+    
+    // Exibir informações do sistema operacional
+    const os = navigator.platform;
+    document.getElementById('os-info').textContent = os;
+    
+    // Exibir informações da tela
+    const screenInfo = `${window.screen.width}x${window.screen.height}`;
+    document.getElementById('screen-info').textContent = screenInfo;
+  </script>
+</body>
+</html> 

@@ -1,7 +1,12 @@
 import React from 'react';
 import { Database, Bell, Settings } from 'lucide-react';
 
-const Header = () => {
+interface HeaderProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   return (
     <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 py-2">
       <div className="container mx-auto px-2">

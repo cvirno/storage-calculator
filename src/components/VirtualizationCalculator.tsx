@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Cpu, Server, AlertTriangle, HardDrive, Gauge, Layers, Activity, Power, MemoryStick } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../lib/supabase';
+import { mockProcessors } from '../lib/mockData';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
@@ -91,13 +92,14 @@ const formatStorageSize = (gb: number): string => {
 };
 
 const VirtualizationCalculator = () => {
-  const [processors, setProcessors] = useState<Processor[]>([]);
+  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
   const [vms, setVms] = useState<VirtualMachine[]>([
     { name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }
   ]);
   const [coreRatio, setCoreRatio] = useState(4);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor>(mockProcessors[0]);
   const [considerNPlusOne, setConsiderNPlusOne] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [serverConfig, setServerConfig] = useState<ServerConfig>({
     formFactor: '2U',
     maxDisksPerServer: 24,
@@ -111,20 +113,27 @@ const VirtualizationCalculator = () => {
 
   useEffect(() => {
     const fetchProcessors = async () => {
-      const { data, error } = await supabase
-        .from('processors')
-        .select('*')
-        .order('generation', { ascending: true })
-        .order('spec_int_base', { ascending: false });
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('processors')
+          .select('*')
+          .order('generation', { ascending: false })
+          .order('spec_int_base', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching processors:', error);
-        return;
-      }
+        if (error) {
+          console.error('Error fetching processors:', error);
+          return;
+        }
 
-      setProcessors(data);
-      if (data.length > 0) {
-        setSelectedProcessor(data[0]);
+        if (data && data.length > 0) {
+          setProcessors(data);
+          setSelectedProcessor(data[0]);
+        }
+      } catch (error) {
+        console.error('Error in fetchProcessors:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -321,7 +330,7 @@ const VirtualizationCalculator = () => {
     }
   ];
 
-  if (!selectedProcessor) {
+  if (isLoading) {
     return <div>Loading processors...</div>;
   }
 
