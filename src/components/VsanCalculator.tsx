@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Cpu, Server, AlertTriangle, MemoryStick as Memory, Database, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { mockProcessors } from '../lib/mockData';
+import { mockProcessors, Processor } from '../lib/mockData';
 
 const COLORS = ['#3B82F6', '#1F2937'];
 
@@ -30,16 +30,6 @@ const DISK_SIZES = [
 const DATA_REDUCTION_RATIOS = [
   1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 1.9, 2.0
 ];
-
-interface Processor {
-  id: string;
-  name: string;
-  cores: number;
-  frequency: string;
-  generation: string;
-  spec_int_base: number;
-  tdp: number;
-}
 
 interface VirtualMachine {
   name: string;
@@ -102,8 +92,8 @@ const VsanCalculator = () => {
   const [vms, setVMs] = useState<VirtualMachine[]>([
     { name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }
   ]);
-  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [processors] = useState<Processor[]>(mockProcessors);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(mockProcessors[0]);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [vmCoreRatio, setVmCoreRatio] = useState(4);
@@ -118,14 +108,6 @@ const VsanCalculator = () => {
     raidType: 'RAID1',
     dataReductionRatio: 2
   });
-
-  useEffect(() => {
-    // Initialize with mock data
-    setProcessors(mockProcessors);
-    if (mockProcessors.length > 0) {
-      setSelectedProcessor(mockProcessors[0]);
-    }
-  }, []);
 
   const addVM = () => {
     setVMs([...vms, {
@@ -266,13 +248,14 @@ const VsanCalculator = () => {
     setVmCoreRatio(4);
     setProcessorsPerServer(2);
     setConsiderNPlusOne(true);
+    setSelectedProcessor(processors[0]);
     setServerConfig({
       formFactor: '2U',
       maxDisksPerServer: 24,
       disksPerServer: 12,
       diskSize: DISK_SIZES[0],
       ftt: 1,
-      raidType: 'RAID5',
+      raidType: 'RAID1',
       dataReductionRatio: 1.0
     });
   };
@@ -330,19 +313,25 @@ const VsanCalculator = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700">Processor</label>
               <select
-                value={selectedProcessor?.id || ''}
+                value={selectedProcessor?.id || processors[0]?.id || ''}
                 onChange={(e) => {
                   const processor = processors.find(p => p.id === e.target.value);
-                  setSelectedProcessor(processor || null);
+                  setSelectedProcessor(processor || processors[0]);
                 }}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
               >
                 {processors.map(processor => (
                   <option key={processor.id} value={processor.id}>
-                    {processor.name} ({processor.cores} cores, {processor.frequency})
+                    {processor.name} ({processor.cores} cores, {processor.frequency}, {processor.tdp}W)
                   </option>
                 ))}
               </select>
+              {selectedProcessor && (
+                <div className="mt-2 text-sm text-gray-500">
+                  <p>Generation: {selectedProcessor.generation}</p>
+                  <p>SPECint Base: {selectedProcessor.spec_int_base}</p>
+                </div>
+              )}
             </div>
 
             <div>
