@@ -5,11 +5,12 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/storage-calculator/',
   server: {
     port: 8080,
     host: '0.0.0.0',
-    open: true,
-    cors: true
+    cors: true,
+    open: true
   },
   build: {
     outDir: 'dist',
@@ -17,9 +18,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-label', '@radix-ui/react-progress', '@radix-ui/react-select', '@radix-ui/react-slot'],
-          charts: ['recharts']
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select']
         }
       }
     }
