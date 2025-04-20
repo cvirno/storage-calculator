@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, Server, AlertTriangle, HardDrive, Gauge, Layers, Activity, Power, MemoryStick } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { supabase } from '../lib/supabase';
 import { mockProcessors } from '../lib/mockData';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
@@ -92,56 +91,37 @@ const formatStorageSize = (gb: number): string => {
 };
 
 const VirtualizationCalculator = () => {
-  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
-  const [vms, setVms] = useState<VirtualMachine[]>([
+  const [vms, setVMs] = useState<VirtualMachine[]>([
     { name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }
   ]);
+  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const [coreRatio, setCoreRatio] = useState(4);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor>(mockProcessors[0]);
   const [considerNPlusOne, setConsiderNPlusOne] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [serverConfig, setServerConfig] = useState<ServerConfig>({
     formFactor: '2U',
     maxDisksPerServer: 24,
     disksPerServer: 12,
-    diskSize: DISK_SIZES[0],
+    diskSize: 960,
     raidType: 'RAID 5',
     memoryDimmSize: 32,
-    memoryDimmsPerServer: 16,
-    maxUtilization: 90
+    memoryDimmsPerServer: 24,
+    maxUtilization: 80
   });
 
   useEffect(() => {
-    const fetchProcessors = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('processors')
-          .select('*')
-          .order('generation', { ascending: false })
-          .order('spec_int_base', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching processors:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setProcessors(data);
-          setSelectedProcessor(data[0]);
-        }
-      } catch (error) {
-        console.error('Error in fetchProcessors:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProcessors();
+    // Initialize with mock data
+    setProcessors(mockProcessors);
+    if (mockProcessors.length > 0) {
+      setSelectedProcessor(mockProcessors[0]);
+    }
   }, []);
 
   const addVM = () => {
-    setVms([...vms, {
+    setVMs([...vms, {
       name: `VM-${vms.length + 1}`,
       vCPUs: 2,
       memory: 4,
@@ -151,7 +131,7 @@ const VirtualizationCalculator = () => {
   };
 
   const removeVM = (index: number) => {
-    setVms(vms.filter((_, i) => i !== index));
+    setVMs(vms.filter((_, i) => i !== index));
   };
 
   const updateVM = (index: number, field: keyof VirtualMachine, value: number | string) => {
@@ -161,7 +141,7 @@ const VirtualizationCalculator = () => {
     } else {
       newVMs[index] = { ...newVMs[index], [field]: Number(value) };
     }
-    setVms(newVMs);
+    setVMs(newVMs);
   };
 
   const calculateTotalResources = () => {
@@ -271,7 +251,7 @@ const VirtualizationCalculator = () => {
   const resetAllData = () => {
     if (window.confirm('Are you sure you want to reset all data? This action cannot be undone.')) {
       // Reset VMs to initial state
-      setVms([{ name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }]);
+      setVMs([{ name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }]);
       
       // Reset server configuration to default
       setServerConfig({
@@ -485,7 +465,7 @@ const VirtualizationCalculator = () => {
                     Processor Model
                   </label>
                   <select
-                    value={selectedProcessor.id}
+                    value={selectedProcessor?.id || ''}
                     onChange={(e) => {
                       const processor = processors.find(p => p.id === e.target.value);
                       if (processor) setSelectedProcessor(processor);
@@ -652,7 +632,7 @@ const VirtualizationCalculator = () => {
               <div className="text-sm text-slate-400 mb-1">Total de vCPUs</div>
               <div className="text-2xl font-bold">{totalResources.vCPUs}</div>
               <div className="text-sm text-slate-400">
-                {(totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2)}:1 proporção
+                {selectedProcessor ? (totalResources.vCPUs / (serverRequirements.total * selectedProcessor.cores * 2)).toFixed(2) : '0'}:1 proporção
               </div>
             </div>
             

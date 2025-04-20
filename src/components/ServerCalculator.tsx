@@ -4,7 +4,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieC
 import RackVisualization from './RackVisualization';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { supabase } from '../lib/supabase';
 import { mockProcessors } from '../lib/mockData';
 
 interface Processor {
@@ -73,11 +72,15 @@ const formatStorage = (gb: number): string => {
 const ServerCalculator = () => {
   const reportRef = useRef<HTMLDivElement>(null);
   const [servers, setServers] = useState<Server[]>([]);
-  const [editingServer, setEditingServer] = useState<string | null>(null);
+  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [editingServer, setEditingServer] = useState<Server | null>(null);
+  const [diskSizes, setDiskSizes] = useState<number[]>([300, 600, 900, 1200, 1800, 2400, 3600, 4800, 7200, 9600]);
+  const [selectedDiskSize, setSelectedDiskSize] = useState<number>(300);
   const [rackView, setRackView] = useState<'front' | 'rear'>('front');
   const [considerNPlusOne, setConsiderNPlusOne] = useState(false);
-  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor>(mockProcessors[0]);
   const [isLoading, setIsLoading] = useState(true);
   const [newServer, setNewServer] = useState<Omit<Server, 'id'>>({
     name: '',
@@ -92,43 +95,14 @@ const ServerCalculator = () => {
   });
 
   useEffect(() => {
-    const fetchProcessors = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('processors')
-          .select('*')
-          .order('generation', { ascending: false })
-          .order('spec_int_base', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching processors:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setProcessors(data);
-          setSelectedProcessor(data[0]);
-          setNewServer(prev => ({
-            ...prev,
-            processorId: data[0].id,
-            coresPerProcessor: data[0].cores
-          }));
-        }
-      } catch (error) {
-        console.error('Error in fetchProcessors:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProcessors();
+    // Initialize with mock data
+    setProcessors(mockProcessors);
   }, []);
 
   const addServer = () => {
     if (editingServer) {
       setServers(servers.map(server => 
-        server.id === editingServer ? { ...newServer, id: server.id } : server
+        server.id === editingServer.id ? { ...newServer, id: server.id } : server
       ));
       setEditingServer(null);
     } else {
@@ -175,7 +149,7 @@ const ServerCalculator = () => {
       diskSize: server.diskSize,
       raidType: server.raidType
     });
-    setEditingServer(server.id);
+    setEditingServer(server);
   };
 
   const calculateTotalStorage = (server: Server) => {

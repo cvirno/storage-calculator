@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Cpu, Server, AlertTriangle, MemoryStick as Memory, Database, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { supabase } from '../lib/supabase';
 import { mockProcessors } from '../lib/mockData';
 
 const COLORS = ['#3B82F6', '#1F2937'];
@@ -100,48 +99,36 @@ const calculateNetStorage = (rawStorage: number, ftt: number, dataReductionRatio
 };
 
 const VsanCalculator = () => {
-  const [processors, setProcessors] = useState<Processor[]>([]);
-  const [vms, setVms] = useState<VirtualMachine[]>([
+  const [vms, setVMs] = useState<VirtualMachine[]>([
     { name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }
   ]);
+  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const [vmCoreRatio, setVmCoreRatio] = useState(4);
   const [processorsPerServer, setProcessorsPerServer] = useState(2);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
   const [considerNPlusOne, setConsiderNPlusOne] = useState(true);
   const [serverConfig, setServerConfig] = useState<ServerConfig>({
     formFactor: '2U',
     maxDisksPerServer: 24,
     disksPerServer: 12,
-    diskSize: DISK_SIZES[0],
+    diskSize: 960,
     ftt: 1,
-    raidType: 'RAID5',
-    dataReductionRatio: 1.0
+    raidType: 'RAID1',
+    dataReductionRatio: 2
   });
 
   useEffect(() => {
-    const fetchProcessors = async () => {
-      const { data, error } = await supabase
-        .from('processors')
-        .select('*')
-        .order('generation', { ascending: true })
-        .order('spec_int_base', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching processors:', error);
-        return;
-      }
-
-      setProcessors(data);
-      if (data.length > 0) {
-        setSelectedProcessor(data[0]);
-      }
-    };
-
-    fetchProcessors();
+    // Initialize with mock data
+    setProcessors(mockProcessors);
+    if (mockProcessors.length > 0) {
+      setSelectedProcessor(mockProcessors[0]);
+    }
   }, []);
 
   const addVM = () => {
-    setVms([...vms, {
+    setVMs([...vms, {
       name: `VM-${vms.length + 1}`,
       vCPUs: 2,
       memory: 4,
@@ -151,7 +138,7 @@ const VsanCalculator = () => {
   };
 
   const removeVM = (index: number) => {
-    setVms(vms.filter((_, i) => i !== index));
+    setVMs(vms.filter((_, i) => i !== index));
   };
 
   const updateVM = (index: number, field: keyof VirtualMachine, value: number | string) => {
@@ -161,7 +148,7 @@ const VsanCalculator = () => {
     } else {
       newVMs[index] = { ...newVMs[index], [field]: Number(value) };
     }
-    setVms(newVMs);
+    setVMs(newVMs);
   };
 
   const calculateTotalResources = () => {
@@ -275,7 +262,7 @@ const VsanCalculator = () => {
   };
 
   const resetAllData = () => {
-    setVms([{ name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }]);
+    setVMs([{ name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }]);
     setVmCoreRatio(4);
     setProcessorsPerServer(2);
     setConsiderNPlusOne(true);
