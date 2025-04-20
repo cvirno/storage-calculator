@@ -1,5 +1,5 @@
 import React from 'react';
-import { Server as ServerIcon, HardDrive, Network, Cpu, Layers, Power } from 'lucide-react';
+import { Server as ServerIcon, HardDrive, Network, Cpu, Layers, Power, MemoryStick } from 'lucide-react';
 
 interface RackVisualizationProps {
   servers: Array<{
@@ -8,6 +8,10 @@ interface RackVisualizationProps {
     rackUnits: number;
     processors?: number;
     coresPerProcessor?: number;
+    processorModel?: string;
+    memoryCapacity?: number;
+    memorySpeed?: number;
+    pcieLanes?: number;
   }>;
   view: 'front' | 'rear';
 }
@@ -20,6 +24,8 @@ const RackVisualization: React.FC<RackVisualizationProps> = ({ servers, view }) 
   // Calculate total processors and cores
   const totalProcessors = servers.reduce((acc, server) => acc + (server.processors || 0), 0);
   const totalCores = servers.reduce((acc, server) => acc + ((server.processors || 0) * (server.coresPerProcessor || 0)), 0);
+  const totalMemory = servers.reduce((acc, server) => acc + (server.memoryCapacity || 0), 0);
+  const totalPcieLanes = servers.reduce((acc, server) => acc + (server.pcieLanes || 0), 0);
   const totalPowerOutlets = servers.length * OUTLETS_PER_SERVER;
 
   const rackUnits = Array.from({ length: TOTAL_UNITS }, (_, i) => i + 1);
@@ -160,7 +166,7 @@ const RackVisualization: React.FC<RackVisualizationProps> = ({ servers, view }) 
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-7 gap-4">
         <div className="bg-slate-800/50 p-4 rounded-xl">
           <div className="flex items-center gap-2 text-slate-400 mb-1">
             <ServerIcon size={16} />
@@ -190,11 +196,20 @@ const RackVisualization: React.FC<RackVisualizationProps> = ({ servers, view }) 
 
         <div className="bg-slate-800/50 p-4 rounded-xl">
           <div className="flex items-center gap-2 text-slate-400 mb-1">
-            <Power size={16} />
-            <span className="text-sm">Power Outlets</span>
+            <MemoryStick size={16} />
+            <span className="text-sm">Total Memory</span>
           </div>
-          <div className="text-2xl font-bold">{totalPowerOutlets}</div>
-          <div className="text-sm text-slate-400 mt-1">Total Required</div>
+          <div className="text-2xl font-bold">{totalMemory} GB</div>
+          <div className="text-sm text-slate-400 mt-1">Physical Memory</div>
+        </div>
+
+        <div className="bg-slate-800/50 p-4 rounded-xl">
+          <div className="flex items-center gap-2 text-slate-400 mb-1">
+            <Network size={16} />
+            <span className="text-sm">PCIe Lanes</span>
+          </div>
+          <div className="text-2xl font-bold">{totalPcieLanes}</div>
+          <div className="text-sm text-slate-400 mt-1">Total Available</div>
         </div>
 
         <div className="bg-slate-800/50 p-4 rounded-xl">

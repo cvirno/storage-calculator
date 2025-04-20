@@ -152,8 +152,8 @@ const VsanCalculator = () => {
     const coresPerServer = selectedProcessor.cores * processorsPerServer;
     const serversForCompute = Math.ceil(requiredCores / (coresPerServer * UTILIZATION_LIMIT));
     
-    // Calculate servers needed for memory
-    const memoryPerServer = 768; // Assuming 768GB per server
+    // Calculate servers needed for memory based on processor's memory capacity
+    const memoryPerServer = selectedProcessor.maxMemoryCapacity; // Use processor's max memory capacity
     const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT));
     
     // Calculate servers needed for storage
@@ -170,14 +170,13 @@ const VsanCalculator = () => {
     const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * UTILIZATION_LIMIT));
     
     // Get the maximum number of servers needed based on all resources
-    let servers = Math.max(serversForCompute, serversForStorage, serversForMemory);
+    let maxServers = Math.max(serversForCompute, serversForStorage, serversForMemory);
     
-    if (considerNPlusOne) {
-      servers += 1;
-    }
+    // Add N+1 if configured
+    let totalServers = considerNPlusOne ? maxServers + 1 : maxServers;
 
     return {
-      total: servers,
+      total: totalServers,
       forCompute: serversForCompute,
       forStorage: serversForStorage,
       forMemory: serversForMemory,
@@ -191,18 +190,19 @@ const VsanCalculator = () => {
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
     
-    const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
+    const totalAvailableCores = serverReqs.total * selectedProcessor.cores * processorsPerServer;
     const cpuUtilization = (totalResources.vCPUs / (totalAvailableCores * vmCoreRatio)) * 100;
     
     return Math.min(cpuUtilization, 100);
   };
 
   const calculateMemoryUtilization = () => {
+    if (!selectedProcessor) return 0;
+    
     const totalResources = calculateTotalResources();
     const serverReqs = calculateRequiredServers();
     
-    const memoryPerServer = 768; // Assuming 768GB per server
-    const totalAvailableMemory = serverReqs.total * memoryPerServer;
+    const totalAvailableMemory = serverReqs.total * selectedProcessor.maxMemoryCapacity;
     const memoryUtilization = (totalResources.memory / totalAvailableMemory) * 100;
     
     return Math.min(memoryUtilization, 100);
@@ -227,6 +227,12 @@ const VsanCalculator = () => {
     if (!selectedProcessor) return 0;
     const serverReqs = calculateRequiredServers();
     return serverReqs.total * selectedProcessor.tdp * processorsPerServer;
+  };
+
+  const calculateTotalCost = () => {
+    if (!selectedProcessor) return 0;
+    const serverReqs = calculateRequiredServers();
+    return serverReqs.total * selectedProcessor.price * processorsPerServer;
   };
 
   const handleFormFactorChange = (formFactor: '1U' | '2U') => {
@@ -587,6 +593,15 @@ const VsanCalculator = () => {
                 <span className="font-medium">Power:</span> {totalPower.toLocaleString()}W
               </p>
             </div>
+          </div>
+
+          <div className="bg-slate-800/50 p-4 rounded-xl">
+            <div className="flex items-center gap-2 text-slate-400 mb-1">
+              <AlertCircle size={16} />
+              <span className="text-sm">Estimated Cost</span>
+            </div>
+            <div className="text-2xl font-bold">${calculateTotalCost().toLocaleString()}</div>
+            <div className="text-sm text-slate-400 mt-1">Total processor cost</div>
           </div>
         </div>
 

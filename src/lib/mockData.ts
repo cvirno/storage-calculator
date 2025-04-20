@@ -6,6 +6,11 @@ export interface Processor {
   generation: string;
   spec_int_base: number;
   tdp: number;
+  maxMemoryChannels: number;
+  maxMemorySpeed: number;
+  maxMemoryCapacity: number;
+  pcieLanes: number;
+  price: number;
 }
 
 export const mockProcessors: Processor[] = [
@@ -16,7 +21,12 @@ export const mockProcessors: Processor[] = [
     frequency: '2.2 GHz',
     generation: '4th Gen',
     spec_int_base: 42.5,
-    tdp: 185
+    tdp: 185,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 64,
+    price: 1495
   },
   {
     id: "2",
@@ -25,7 +35,12 @@ export const mockProcessors: Processor[] = [
     frequency: '2.8 GHz',
     generation: '4th Gen',
     spec_int_base: 45.8,
-    tdp: 195
+    tdp: 195,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 80,
+    price: 1995
   },
   {
     id: "3",
@@ -34,7 +49,12 @@ export const mockProcessors: Processor[] = [
     frequency: '3.2 GHz',
     generation: '4th Gen',
     spec_int_base: 38.2,
-    tdp: 165
+    tdp: 165,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 64,
+    price: 1295
   },
   {
     id: "4",
@@ -43,7 +63,12 @@ export const mockProcessors: Processor[] = [
     frequency: '3.6 GHz',
     generation: '4th Gen',
     spec_int_base: 52.3,
-    tdp: 270
+    tdp: 270,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 80,
+    price: 2495
   },
   {
     id: "5",
@@ -52,7 +77,12 @@ export const mockProcessors: Processor[] = [
     frequency: '2.0 GHz',
     generation: '4th Gen',
     spec_int_base: 35.6,
-    tdp: 150
+    tdp: 150,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 64,
+    price: 1195
   },
   {
     id: "6",
@@ -61,7 +91,12 @@ export const mockProcessors: Processor[] = [
     frequency: '2.1 GHz',
     generation: '4th Gen',
     spec_int_base: 48.7,
-    tdp: 270
+    tdp: 270,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 80,
+    price: 2995
   },
   {
     id: "7",
@@ -70,7 +105,12 @@ export const mockProcessors: Processor[] = [
     frequency: '1.8 GHz',
     generation: '4th Gen',
     spec_int_base: 28.4,
-    tdp: 125
+    tdp: 125,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4400,
+    maxMemoryCapacity: 4096,
+    pcieLanes: 64,
+    price: 695
   },
   {
     id: "8",
@@ -79,7 +119,12 @@ export const mockProcessors: Processor[] = [
     frequency: '2.0 GHz',
     generation: '4th Gen',
     spec_int_base: 47.2,
-    tdp: 205
+    tdp: 205,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 80,
+    price: 2795
   },
   {
     id: "9",
@@ -88,7 +133,12 @@ export const mockProcessors: Processor[] = [
     frequency: '2.8 GHz',
     generation: '4th Gen',
     spec_int_base: 55.6,
-    tdp: 300
+    tdp: 300,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 8192,
+    pcieLanes: 96,
+    price: 4995
   },
   {
     id: "10",
@@ -97,7 +147,12 @@ export const mockProcessors: Processor[] = [
     frequency: '1.9 GHz',
     generation: '4th Gen',
     spec_int_base: 38.9,
-    tdp: 165
+    tdp: 165,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 64,
+    price: 1895
   },
   {
     id: "11",
@@ -106,7 +161,12 @@ export const mockProcessors: Processor[] = [
     frequency: '2.0 GHz',
     generation: '4th Gen',
     spec_int_base: 62.4,
-    tdp: 350
+    tdp: 350,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 8192,
+    pcieLanes: 96,
+    price: 6995
   },
   {
     id: "12",
@@ -115,7 +175,12 @@ export const mockProcessors: Processor[] = [
     frequency: '1.9 GHz',
     generation: '4th Gen',
     spec_int_base: 65.8,
-    tdp: 350
+    tdp: 350,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 8192,
+    pcieLanes: 96,
+    price: 7995
   },
   {
     id: "13",
@@ -124,7 +189,12 @@ export const mockProcessors: Processor[] = [
     frequency: '1.9 GHz',
     generation: '4th Gen',
     spec_int_base: 68.2,
-    tdp: 350
+    tdp: 350,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 8192,
+    pcieLanes: 96,
+    price: 8995
   },
   {
     id: "14",
@@ -133,7 +203,12 @@ export const mockProcessors: Processor[] = [
     frequency: '3.7 GHz',
     generation: '4th Gen',
     spec_int_base: 42.8,
-    tdp: 195
+    tdp: 195,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 80,
+    price: 1995
   },
   {
     id: "15",
@@ -142,6 +217,11 @@ export const mockProcessors: Processor[] = [
     frequency: '3.1 GHz',
     generation: '4th Gen',
     spec_int_base: 58.4,
-    tdp: 350
+    tdp: 350,
+    maxMemoryChannels: 8,
+    maxMemorySpeed: 4800,
+    maxMemoryCapacity: 6144,
+    pcieLanes: 80,
+    price: 3995
   }
 ]; 

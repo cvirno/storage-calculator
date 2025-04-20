@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Cpu, Server, AlertTriangle, HardDrive, Gauge, Layers, Activity, Power, MemoryStick } from 'lucide-react';
+import { Cpu, Server, AlertTriangle, HardDrive, Gauge, Layers, Activity, Power, MemoryStick, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { mockProcessors } from '../lib/mockData';
 
@@ -38,6 +38,8 @@ interface Processor {
   generation: string;
   spec_int_base: number;
   tdp: number;
+  maxMemoryCapacity: number;
+  price: number;
 }
 
 interface VirtualMachine {
@@ -156,32 +158,31 @@ const VirtualizationCalculator = () => {
     if (!selectedProcessor) return { total: 0, forCompute: 0, forStorage: 0, forMemory: 0, storagePerServer: 0 };
 
     const totalResources = calculateTotalResources();
-    const maxUtilizationFactor = serverConfig.maxUtilization / 100;
+    const UTILIZATION_LIMIT = 0.95; // 95% utilization limit
     
-    // Calculate servers needed for CPU
-    const requiredCores = Math.ceil(totalResources.vCPUs / coreRatio / maxUtilizationFactor);
+    // Calculate servers needed for compute
+    const requiredCores = Math.ceil(totalResources.vCPUs / coreRatio);
     const coresPerServer = selectedProcessor.cores * 2;
-    const serversForCompute = Math.ceil(requiredCores / coresPerServer);
+    const serversForCompute = Math.ceil(requiredCores / (coresPerServer * UTILIZATION_LIMIT));
     
-    // Calculate servers needed for memory
-    const memoryPerServer = serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
-    const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * maxUtilizationFactor));
+    // Calculate servers needed for memory based on processor's memory capacity
+    const memoryPerServer = selectedProcessor.maxMemoryCapacity; // Use processor's max memory capacity
+    const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT));
     
     // Calculate servers needed for storage
     const totalStorageGB = totalResources.storage;
     const usableStoragePerDisk = serverConfig.diskSize * RAID_FACTORS[serverConfig.raidType];
     const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
-    const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * maxUtilizationFactor));
+    const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * UTILIZATION_LIMIT));
     
-    // Take the maximum of servers needed for all resources
-    let servers = Math.max(serversForCompute, serversForStorage, serversForMemory);
+    // Get the maximum number of servers needed based on all resources
+    let maxServers = Math.max(serversForCompute, serversForStorage, serversForMemory);
     
-    if (considerNPlusOne) {
-      servers += 1;
-    }
+    // Add N+1 if configured
+    let totalServers = considerNPlusOne ? maxServers + 1 : maxServers;
 
     return {
-      total: servers,
+      total: totalServers,
       forCompute: serversForCompute,
       forStorage: serversForStorage,
       forMemory: serversForMemory,
@@ -199,8 +200,8 @@ const VirtualizationCalculator = () => {
     const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
     const cpuUtilization = (totalResources.vCPUs / (totalAvailableCores * coreRatio)) * 100;
     
-    // Calculate memory utilization
-    const totalAvailableMemory = serverReqs.total * serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
+    // Calculate memory utilization based on processor's memory capacity
+    const totalAvailableMemory = serverReqs.total * selectedProcessor.maxMemoryCapacity;
     const memoryUtilization = (totalResources.memory / totalAvailableMemory) * 100;
     
     // Calculate storage utilization
@@ -218,6 +219,12 @@ const VirtualizationCalculator = () => {
     if (!selectedProcessor) return 0;
     const servers = calculateRequiredServers().total;
     return servers * selectedProcessor.spec_int_base * 2;
+  };
+
+  const calculateTotalCost = () => {
+    if (!selectedProcessor) return 0;
+    const serverReqs = calculateRequiredServers();
+    return serverReqs.total * selectedProcessor.price * 2;
   };
 
   const handleFormFactorChange = (formFactor: '1U' | '2U') => {
@@ -722,6 +729,15 @@ const VirtualizationCalculator = () => {
                 )}
               </div>
             ))}
+          </div>
+
+          <div className="bg-slate-800/50 p-4 rounded-xl">
+            <div className="flex items-center gap-2 text-slate-400 mb-1">
+              <AlertCircle size={16} />
+              <span className="text-sm">Estimated Cost</span>
+            </div>
+            <div className="text-2xl font-bold">${calculateTotalCost().toLocaleString()}</div>
+            <div className="text-sm text-slate-400 mt-1">Total processor cost</div>
           </div>
         </div>
       </div>
