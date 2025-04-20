@@ -118,12 +118,11 @@ const VirtualizationCalculator = () => {
     { name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }
   ]);
   const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(mockProcessors[0]);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [coreRatio, setCoreRatio] = useState(4);
   const [considerNPlusOne, setConsiderNPlusOne] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [serverConfig, setServerConfig] = useState<ServerConfig>({
     formFactor: '2U',
     maxDisksPerServer: 24,
@@ -133,7 +132,7 @@ const VirtualizationCalculator = () => {
     memoryDimmSize: 32,
     memoryDimmsPerServer: 24,
     maxUtilization: 80,
-    processorId: '',
+    processorId: mockProcessors[0]?.id || '',
     memorySize: 0,
     memoryQuantity: 0,
     diskQuantity: 0,
@@ -145,6 +144,10 @@ const VirtualizationCalculator = () => {
     setProcessors(mockProcessors);
     if (mockProcessors.length > 0) {
       setSelectedProcessor(mockProcessors[0]);
+      setServerConfig(prev => ({
+        ...prev,
+        processorId: mockProcessors[0].id
+      }));
     }
   }, []);
 
@@ -308,7 +311,7 @@ const VirtualizationCalculator = () => {
         memoryDimmSize: 32,
         memoryDimmsPerServer: 16,
         maxUtilization: 90,
-        processorId: '',
+        processorId: mockProcessors[0]?.id || '',
         memorySize: 0,
         memoryQuantity: 0,
         diskQuantity: 0,
@@ -359,10 +362,6 @@ const VirtualizationCalculator = () => {
       ]
     }
   ];
-
-  if (isLoading) {
-    return <div>Loading processors...</div>;
-  }
 
   return (
     <div className="flex flex-row-reverse gap-8">
