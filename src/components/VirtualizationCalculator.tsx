@@ -117,8 +117,8 @@ const VirtualizationCalculator = () => {
   const [vms, setVMs] = useState<VirtualMachine[]>([
     { name: 'VM-1', vCPUs: 2, memory: 4, storage: 1024, count: 1 }
   ]);
-  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(mockProcessors[0]);
+  const [processors] = useState<Processor[]>(mockProcessors);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor>(mockProcessors[0]);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [coreRatio, setCoreRatio] = useState(4);
@@ -138,18 +138,6 @@ const VirtualizationCalculator = () => {
     diskQuantity: 0,
     nPlusOne: true
   });
-
-  useEffect(() => {
-    // Initialize with mock data
-    setProcessors(mockProcessors);
-    if (mockProcessors.length > 0) {
-      setSelectedProcessor(mockProcessors[0]);
-      setServerConfig(prev => ({
-        ...prev,
-        processorId: mockProcessors[0].id
-      }));
-    }
-  }, []);
 
   const addVM = () => {
     setVMs([...vms, {
@@ -198,33 +186,24 @@ const VirtualizationCalculator = () => {
       };
     }
 
-    const UTILIZATION_LIMIT = 0.95; // 95% utilization limit
+    // Calculate required servers for compute
+    const totalPhysicalCores = selectedProcessor.cores * 2; // Assuming hyperthreading
+    const maxVCPUsPerServer = totalPhysicalCores * coreRatio;
+    const serversForCompute = Math.ceil(totalResources.vCPUs / maxVCPUsPerServer);
 
-    // Calculate servers needed for compute
-    const serversForCompute = Math.ceil(
-      (totalResources.vCPUs / (selectedProcessor.cores * UTILIZATION_LIMIT))
-    );
+    // Calculate required servers for memory
+    const totalMemoryPerServer = serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
+    const serversForMemory = Math.ceil(totalResources.memory / totalMemoryPerServer);
 
-    // Calculate servers needed for memory
-    const memoryPerServer = serverConfig.memorySize * serverConfig.memoryQuantity;
-    const serversForMemory = Math.ceil(
-      (totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT))
-    );
+    // Calculate required servers for storage
+    const usableStoragePerServer = serverConfig.disksPerServer * serverConfig.diskSize * RAID_FACTORS[serverConfig.raidType];
+    const serversForStorage = Math.ceil(totalResources.storage / usableStoragePerServer);
 
-    // Calculate servers needed for storage
-    const usableStoragePerServer = serverConfig.diskSize * serverConfig.diskQuantity * RAID_FACTORS[serverConfig.raidType];
-    const serversForStorage = Math.ceil(
-      (totalResources.storage / (usableStoragePerServer * UTILIZATION_LIMIT))
-    );
-
-    // Get the maximum number of servers needed
+    // Return the maximum number of servers required
     const maxServers = Math.max(serversForCompute, serversForMemory, serversForStorage);
 
-    // Add N+1 if specified
-    const totalServers = serverConfig.nPlusOne ? maxServers + 1 : maxServers;
-
     return {
-      total: totalServers,
+      total: maxServers,
       forCompute: serversForCompute,
       forStorage: serversForStorage,
       forMemory: serversForMemory
@@ -232,23 +211,15 @@ const VirtualizationCalculator = () => {
   };
 
   const calculateResourceUtilization = () => {
-    if (!selectedProcessor) return { cpu: 0, memory: 0, storage: 0 };
-    
-    const totalResources = calculateTotalResources();
-    const serverReqs = calculateRequiredServers(totalResources, serverConfig, processors);
-    
-    // Calculate CPU utilization
-    const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
-    const cpuUtilization = (totalResources.vCPUs / (totalAvailableCores * coreRatio)) * 100;
-    
-    // Calculate memory utilization based on processor's memory capacity
-    const totalAvailableMemory = serverReqs.total * selectedProcessor.maxMemoryCapacity;
+    const totalAvailableVCPUs = serverRequirements.total * selectedProcessor.cores * 2 * coreRatio;
+    const cpuUtilization = (totalResources.vCPUs / totalAvailableVCPUs) * 100;
+
+    const totalAvailableMemory = serverRequirements.total * serverConfig.memoryDimmSize * serverConfig.memoryDimmsPerServer;
     const memoryUtilization = (totalResources.memory / totalAvailableMemory) * 100;
-    
-    // Calculate storage utilization
-    const totalAvailableStorage = serverReqs.total * (serverConfig.diskSize * serverConfig.diskQuantity * RAID_FACTORS[serverConfig.raidType]);
+
+    const totalAvailableStorage = serverRequirements.total * serverConfig.disksPerServer * serverConfig.diskSize * RAID_FACTORS[serverConfig.raidType];
     const storageUtilization = (totalResources.storage / totalAvailableStorage) * 100;
-    
+
     return {
       cpu: Math.min(cpuUtilization, 100),
       memory: Math.min(memoryUtilization, 100),
@@ -257,13 +228,11 @@ const VirtualizationCalculator = () => {
   };
 
   const calculateTotalSpecInt = () => {
-    if (!selectedProcessor) return 0;
     const servers = calculateRequiredServers(calculateTotalResources(), serverConfig, processors).total;
     return servers * selectedProcessor.spec_int_base * 2;
   };
 
   const calculateTotalCost = () => {
-    if (!selectedProcessor) return 0;
     const serverReqs = calculateRequiredServers(calculateTotalResources(), serverConfig, processors);
     return serverReqs.total * selectedProcessor.price * 2;
   };
@@ -363,6 +332,11 @@ const VirtualizationCalculator = () => {
     }
   ];
 
+  const utilizationData = [
+    { name: 'Used vCPUs', value: totalResources.vCPUs },
+    { name: 'Available vCPUs', value: serverRequirements.total * selectedProcessor.cores * 2 * coreRatio - totalResources.vCPUs }
+  ];
+
   return (
     <div className="flex flex-row-reverse gap-8">
       {/* Right Side - VM Configuration */}
@@ -400,20 +374,20 @@ const VirtualizationCalculator = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Nome da VM
+                        VM Name
                       </label>
                       <input
                         type="text"
                         value={vm.name}
                         onChange={(e) => updateVM(index, 'name', e.target.value)}
                         className="w-full bg-slate-600 rounded-lg px-4 py-2 text-white"
-                        placeholder="Digite o nome da VM"
+                        placeholder="Enter VM name"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Quantidade
+                        Number of VMs
                       </label>
                       <input
                         type="number"
@@ -426,7 +400,7 @@ const VirtualizationCalculator = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Número de vCPUs
+                        vCPUs
                       </label>
                       <input
                         type="number"
@@ -439,7 +413,7 @@ const VirtualizationCalculator = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Memória (GB)
+                        Memory (GB)
                       </label>
                       <input
                         type="number"
@@ -452,7 +426,7 @@ const VirtualizationCalculator = () => {
 
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-slate-300 mb-1">
-                        Armazenamento (GB)
+                        Storage (GB)
                       </label>
                       <input
                         type="number"
@@ -478,7 +452,7 @@ const VirtualizationCalculator = () => {
                 onClick={addVM}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors"
               >
-                Adicionar Outra Configuração de VM
+                Add Another VM Configuration
               </button>
 
               <div className="space-y-4">
@@ -514,16 +488,16 @@ const VirtualizationCalculator = () => {
                     Processor Model
                   </label>
                   <select
-                    value={selectedProcessor?.id || ''}
+                    value={selectedProcessor.id}
                     onChange={(e) => {
                       const processor = processors.find(p => p.id === e.target.value);
-                      if (processor) setSelectedProcessor(processor);
+                      setSelectedProcessor(processor || mockProcessors[0]);
                     }}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                   >
                     {processors.map((processor) => (
                       <option key={processor.id} value={processor.id}>
-                        {processor.name} ({processor.cores} cores, {processor.frequency}, {processor.tdp}W)
+                        {processor.name} ({processor.cores} cores, {processor.frequency}, {processor.tdp}W, SPECint Rate: {processor.spec_int_base})
                       </option>
                     ))}
                   </select>

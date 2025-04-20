@@ -1,9 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { HardDrive, Plus, AlertTriangle, Trash2, Download, Edit2, Server } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Cpu, Server as ServerIcon, AlertTriangle, HardDrive, Gauge, Layers, Activity, Power, MemoryStick, Plus, Edit2, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import RackVisualization from './RackVisualization';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { mockProcessors } from '../lib/mockData';
 
 interface Processor {
@@ -26,7 +23,26 @@ interface Server {
   coresPerProcessor: number;
   disks: number;
   diskSize: number;
-  raidType: 'RAID 1' | 'RAID 5' | 'RAID 6';
+  raidType: 'RAID 1' | 'RAID 5' | 'RAID 6' | 'RAID 10';
+}
+
+interface ServerConfig {
+  formFactor: '1U' | '2U';
+  maxDisksPerServer: number;
+  disksPerServer: number;
+  diskSize: number;
+  raidType: 'RAID 1' | 'RAID 5' | 'RAID 6' | 'RAID 10';
+  memoryDimmSize: number;
+  memoryDimmsPerServer: number;
+  maxUtilization: number;
+  processorId: string;
+  memorySize: number;
+  memoryQuantity: number;
+  diskQuantity: number;
+  nPlusOne: boolean;
+  editingServer: Server | null;
+  newServer: Server;
+  quantity: number;
 }
 
 const COLORS = ['#3B82F6', '#10B981'];
@@ -71,60 +87,86 @@ const formatStorage = (gb: number): string => {
 
 const ServerCalculator = () => {
   const reportRef = useRef<HTMLDivElement>(null);
-  const [servers, setServers] = useState<Server[]>([]);
-  const [processors, setProcessors] = useState<Processor[]>(mockProcessors);
-  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(null);
+  const [servers, setServers] = useState<Server[]>([
+    {
+      id: `${Date.now()}-0`,
+      name: 'Server-1',
+      quantity: 1,
+      rackUnits: 1,
+      processorId: mockProcessors[0].id,
+      processors: 1,
+      coresPerProcessor: mockProcessors[0].cores,
+      disks: 1,
+      diskSize: DISK_SIZES[0],
+      raidType: 'RAID 1'
+    }
+  ]);
+  const [processors] = useState<Processor[]>(mockProcessors);
+  const [selectedProcessor, setSelectedProcessor] = useState<Processor | null>(mockProcessors[0]);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [editingServer, setEditingServer] = useState<Server | null>(null);
-  const [diskSizes, setDiskSizes] = useState<number[]>([300, 600, 900, 1200, 1800, 2400, 3600, 4800, 7200, 9600]);
-  const [selectedDiskSize, setSelectedDiskSize] = useState<number>(300);
-  const [rackView, setRackView] = useState<'front' | 'rear'>('front');
-  const [considerNPlusOne, setConsiderNPlusOne] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [newServer, setNewServer] = useState<Omit<Server, 'id'>>({
-    name: '',
-    quantity: 1,
-    rackUnits: 1,
-    processorId: mockProcessors[0].id,
-    processors: 1,
-    coresPerProcessor: mockProcessors[0].cores,
-    disks: 1,
-    diskSize: DISK_SIZES[0],
-    raidType: 'RAID 1'
+  const [coreRatio, setCoreRatio] = useState(4);
+  const [considerNPlusOne, setConsiderNPlusOne] = useState(true);
+  const [serverConfig, setServerConfig] = useState<ServerConfig>({
+    formFactor: '2U',
+    maxDisksPerServer: 24,
+    disksPerServer: 12,
+    diskSize: 960,
+    raidType: 'RAID 5',
+    memoryDimmSize: 32,
+    memoryDimmsPerServer: 24,
+    maxUtilization: 80,
+    processorId: mockProcessors[0]?.id || '',
+    memorySize: 0,
+    memoryQuantity: 0,
+    diskQuantity: 0,
+    nPlusOne: true,
+    editingServer: null,
+    newServer: {
+      id: `${Date.now()}-0`,
+      name: '',
+      quantity: 1,
+      rackUnits: 1,
+      processorId: mockProcessors[0]?.id || '',
+      processors: 1,
+      coresPerProcessor: mockProcessors[0]?.cores || 0,
+      disks: 1,
+      diskSize: DISK_SIZES[0],
+      raidType: 'RAID 1'
+    },
+    quantity: 1
   });
 
-  useEffect(() => {
-    // Initialize with mock data
-    setProcessors(mockProcessors);
-  }, []);
-
   const addServer = () => {
-    if (editingServer) {
+    if (serverConfig.editingServer) {
       setServers(servers.map(server => 
-        server.id === editingServer.id ? { ...newServer, id: server.id } : server
+        server.id === serverConfig.editingServer.id ? { ...serverConfig.newServer, id: server.id } : server
       ));
-      setEditingServer(null);
+      setServerConfig({ ...serverConfig, editingServer: null });
     } else {
-      const newServers = Array.from({ length: newServer.quantity }, (_, index) => ({
-        ...newServer,
+      const newServers = Array.from({ length: serverConfig.quantity }, (_, index) => ({
+        ...serverConfig.newServer,
         id: `${Date.now()}-${index}`,
-        name: newServer.quantity > 1 ? `${newServer.name}-${index + 1}` : newServer.name
+        name: serverConfig.quantity > 1 ? `${serverConfig.newServer.name}-${index + 1}` : serverConfig.newServer.name
       }));
       setServers([...servers, ...newServers]);
     }
 
     const defaultProcessor = processors[0];
-    setNewServer({
-      name: '',
-      quantity: 1,
-      rackUnits: 1,
-      processorId: defaultProcessor?.id || '',
-      processors: 1,
-      coresPerProcessor: defaultProcessor?.cores || 0,
-      disks: 1,
-      diskSize: DISK_SIZES[0],
-      raidType: 'RAID 1'
+    setServerConfig({
+      ...serverConfig,
+      newServer: {
+        id: `${Date.now()}-${Math.random()}`,
+        name: '',
+        quantity: 1,
+        rackUnits: 1,
+        processorId: defaultProcessor?.id || '',
+        processors: 1,
+        coresPerProcessor: defaultProcessor?.cores || 0,
+        disks: 1,
+        diskSize: DISK_SIZES[0],
+        raidType: 'RAID 1'
+      }
     });
   };
 
@@ -134,22 +176,25 @@ const ServerCalculator = () => {
 
   const clearAllServers = () => {
     setServers([]);
-    setEditingServer(null);
+    setServerConfig({ ...serverConfig, editingServer: null });
   };
 
   const editServer = (server: Server) => {
-    setNewServer({
-      name: server.name,
-      quantity: 1,
-      rackUnits: server.rackUnits,
-      processorId: server.processorId,
-      processors: server.processors,
-      coresPerProcessor: server.coresPerProcessor,
-      disks: server.disks,
-      diskSize: server.diskSize,
-      raidType: server.raidType
+    setServerConfig({
+      ...serverConfig,
+      newServer: {
+        name: server.name,
+        quantity: 1,
+        rackUnits: server.rackUnits,
+        processorId: server.processorId,
+        processors: server.processors,
+        coresPerProcessor: server.coresPerProcessor,
+        disks: server.disks,
+        diskSize: server.diskSize,
+        raidType: server.raidType
+      },
+      editingServer: server
     });
-    setEditingServer(server);
   };
 
   const calculateTotalStorage = (server: Server) => {
@@ -189,26 +234,25 @@ const ServerCalculator = () => {
   const handleProcessorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedProcessor = processors.find(p => p.id === e.target.value);
     if (selectedProcessor) {
-      setNewServer({
-        ...newServer,
-        processorId: selectedProcessor.id,
-        coresPerProcessor: selectedProcessor.cores
+      setServerConfig({
+        ...serverConfig,
+        newServer: {
+          ...serverConfig.newServer,
+          processorId: selectedProcessor.id,
+          coresPerProcessor: selectedProcessor.cores
+        }
       });
     }
   };
 
   const handleDiskSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setNewServer({ ...newServer, diskSize: parseInt(e.target.value) });
+    setServerConfig({ ...serverConfig, newServer: { ...serverConfig.newServer, diskSize: parseInt(e.target.value) } });
   };
 
   const storageData = [
     { name: 'Armazenamento Bruto', value: servers.reduce((acc, server) => acc + (server.disks * server.diskSize), 0) },
     { name: 'Armazenamento Utilizável', value: servers.reduce((acc, server) => acc + calculateTotalStorage(server), 0) }
   ];
-
-  if (isLoading) {
-    return <div>Loading processors...</div>;
-  }
 
   return (
     <div className="flex flex-row-reverse gap-8">
@@ -224,8 +268,8 @@ const ServerCalculator = () => {
                   </label>
                   <input
                     type="text"
-                    value={newServer.name}
-                    onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
+                    value={serverConfig.newServer.name}
+                    onChange={(e) => setServerConfig({ ...serverConfig, newServer: { ...serverConfig.newServer, name: e.target.value } })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                     placeholder="Digite o nome do servidor"
                   />
@@ -237,11 +281,11 @@ const ServerCalculator = () => {
                   </label>
                   <input
                     type="number"
-                    value={newServer.quantity}
-                    onChange={(e) => setNewServer({ ...newServer, quantity: parseInt(e.target.value) })}
+                    value={serverConfig.quantity}
+                    onChange={(e) => setServerConfig({ ...serverConfig, quantity: parseInt(e.target.value) })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                     min="1"
-                    disabled={editingServer !== null}
+                    disabled={serverConfig.editingServer !== null}
                   />
                 </div>
 
@@ -251,8 +295,8 @@ const ServerCalculator = () => {
                   </label>
                   <input
                     type="number"
-                    value={newServer.rackUnits}
-                    onChange={(e) => setNewServer({ ...newServer, rackUnits: parseInt(e.target.value) })}
+                    value={serverConfig.newServer.rackUnits}
+                    onChange={(e) => setServerConfig({ ...serverConfig, newServer: { ...serverConfig.newServer, rackUnits: parseInt(e.target.value) } })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                     min="1"
                     max="42"
@@ -264,7 +308,7 @@ const ServerCalculator = () => {
                     Modelo do Processador
                   </label>
                   <select
-                    value={newServer.processorId}
+                    value={serverConfig.newServer.processorId}
                     onChange={handleProcessorChange}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                   >
@@ -282,8 +326,8 @@ const ServerCalculator = () => {
                   </label>
                   <input
                     type="number"
-                    value={newServer.processors}
-                    onChange={(e) => setNewServer({ ...newServer, processors: parseInt(e.target.value) })}
+                    value={serverConfig.newServer.processors}
+                    onChange={(e) => setServerConfig({ ...serverConfig, newServer: { ...serverConfig.newServer, processors: parseInt(e.target.value) } })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                     min="1"
                     max="4"
@@ -296,8 +340,8 @@ const ServerCalculator = () => {
                   </label>
                   <input
                     type="number"
-                    value={newServer.disks}
-                    onChange={(e) => setNewServer({ ...newServer, disks: parseInt(e.target.value) })}
+                    value={serverConfig.newServer.disks}
+                    onChange={(e) => setServerConfig({ ...serverConfig, newServer: { ...serverConfig.newServer, disks: parseInt(e.target.value) } })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                     min="1"
                   />
@@ -308,7 +352,7 @@ const ServerCalculator = () => {
                     Tamanho do Disco
                   </label>
                   <select
-                    value={newServer.diskSize}
+                    value={serverConfig.newServer.diskSize}
                     onChange={handleDiskSizeChange}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                   >
@@ -325,8 +369,8 @@ const ServerCalculator = () => {
                     Tipo de RAID
                   </label>
                   <select
-                    value={newServer.raidType}
-                    onChange={(e) => setNewServer({ ...newServer, raidType: e.target.value as Server['raidType'] })}
+                    value={serverConfig.newServer.raidType}
+                    onChange={(e) => setServerConfig({ ...serverConfig, newServer: { ...serverConfig.newServer, raidType: e.target.value as Server['raidType'] } })}
                     className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white"
                   >
                     <option value="RAID 1">RAID 1</option>
@@ -340,8 +384,8 @@ const ServerCalculator = () => {
                 onClick={addServer}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 flex items-center justify-center gap-2 transition-colors"
               >
-                {editingServer ? <Edit2 size={20} /> : <Plus size={20} />}
-                {editingServer ? 'Atualizar Servidor' : 'Adicionar Servidor'}
+                {serverConfig.editingServer ? <Edit2 size={20} /> : <Plus size={20} />}
+                {serverConfig.editingServer ? 'Atualizar Servidor' : 'Adicionar Servidor'}
               </button>
             </div>
           </div>
@@ -362,8 +406,8 @@ const ServerCalculator = () => {
               <input
                 type="checkbox"
                 id="nPlusOne"
-                checked={considerNPlusOne}
-                onChange={(e) => setConsiderNPlusOne(e.target.checked)}
+                checked={serverConfig.nPlusOne}
+                onChange={(e) => setServerConfig({ ...serverConfig, nPlusOne: e.target.checked })}
                 className="rounded border-slate-500"
               />
               <label htmlFor="nPlusOne" className="text-sm text-slate-300">
@@ -384,7 +428,7 @@ const ServerCalculator = () => {
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
             <div className="text-sm text-slate-400 mb-1">Total de Servidores</div>
             <div className="text-2xl font-bold">
-              {servers.length}{considerNPlusOne && servers.length > 0 ? ' (+1)' : ''}
+              {servers.length}{serverConfig.nPlusOne && servers.length > 0 ? ' (+1)' : ''}
             </div>
           </div>
           <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
@@ -424,7 +468,7 @@ const ServerCalculator = () => {
                     className="bg-slate-700/50 p-2 rounded-lg flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <Server size={14} className="text-blue-400 shrink-0" />
+                      <ServerIcon size={14} className="text-blue-400 shrink-0" />
                       <div className="min-w-0">
                         <h3 className="font-medium text-sm truncate">{server.name}</h3>
                         <p className="text-xs text-slate-400 truncate">
@@ -501,37 +545,6 @@ const ServerCalculator = () => {
                 Nenhum servidor adicionado ainda
               </div>
             )}
-          </div>
-        </div>
-
-        <div>
-          <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Layout do Rack</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setRackView('front')}
-                  className={`px-3 py-1 rounded-lg transition-colors ${
-                    rackView === 'front'
-                      ? 'bg-blue-500/20 text-blue-300'
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Vista Frontal
-                </button>
-                <button
-                  onClick={() => setRackView('rear')}
-                  className={`px-3 py-1 rounded-lg transition-colors ${
-                    rackView === 'rear'
-                      ? 'bg-blue-500/20 text-blue-300'
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Vista Traseira
-                </button>
-              </div>
-            </div>
-            <RackVisualization servers={servers} view={rackView} />
           </div>
         </div>
       </div>
