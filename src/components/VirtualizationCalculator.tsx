@@ -38,7 +38,10 @@ interface Processor {
   generation: string;
   spec_int_base: number;
   tdp: number;
+  maxMemoryChannels: number;
+  maxMemorySpeed: number;
   maxMemoryCapacity: number;
+  pcieLanes: number;
   price: number;
 }
 
@@ -59,6 +62,24 @@ interface ServerConfig {
   memoryDimmSize: number;
   memoryDimmsPerServer: number;
   maxUtilization: number;
+  processorId: string;
+  memorySize: number;
+  memoryQuantity: number;
+  diskQuantity: number;
+  nPlusOne: boolean;
+}
+
+interface TotalResources {
+  vCPUs: number;
+  memory: number;
+  storage: number;
+}
+
+interface RequiredServers {
+  total: number;
+  forCompute: number;
+  forStorage: number;
+  forMemory: number;
 }
 
 const RAID_FACTORS = {
@@ -111,7 +132,12 @@ const VirtualizationCalculator = () => {
     raidType: 'RAID 5',
     memoryDimmSize: 32,
     memoryDimmsPerServer: 24,
-    maxUtilization: 80
+    maxUtilization: 80,
+    processorId: '',
+    memorySize: 0,
+    memoryQuantity: 0,
+    diskQuantity: 0,
+    nPlusOne: true
   });
 
   useEffect(() => {
@@ -154,39 +180,51 @@ const VirtualizationCalculator = () => {
     }), { vCPUs: 0, memory: 0, storage: 0 });
   };
 
-  const calculateRequiredServers = () => {
-    if (!selectedProcessor) return { total: 0, forCompute: 0, forStorage: 0, forMemory: 0, storagePerServer: 0 };
+  const calculateRequiredServers = (
+    totalResources: TotalResources,
+    serverConfig: ServerConfig,
+    processors: Processor[]
+  ): RequiredServers => {
+    const selectedProcessor = processors.find(p => p.id === serverConfig.processorId);
+    if (!selectedProcessor) {
+      return {
+        total: 0,
+        forCompute: 0,
+        forStorage: 0,
+        forMemory: 0
+      };
+    }
 
-    const totalResources = calculateTotalResources();
     const UTILIZATION_LIMIT = 0.95; // 95% utilization limit
-    
+
     // Calculate servers needed for compute
-    const requiredCores = Math.ceil(totalResources.vCPUs / coreRatio);
-    const coresPerServer = selectedProcessor.cores * 2;
-    const serversForCompute = Math.ceil(requiredCores / (coresPerServer * UTILIZATION_LIMIT));
-    
-    // Calculate servers needed for memory based on processor's memory capacity
-    const memoryPerServer = selectedProcessor.maxMemoryCapacity; // Use processor's max memory capacity
-    const serversForMemory = Math.ceil(totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT));
-    
+    const serversForCompute = Math.ceil(
+      (totalResources.vCPUs / (selectedProcessor.cores * UTILIZATION_LIMIT))
+    );
+
+    // Calculate servers needed for memory
+    const memoryPerServer = serverConfig.memorySize * serverConfig.memoryQuantity;
+    const serversForMemory = Math.ceil(
+      (totalResources.memory / (memoryPerServer * UTILIZATION_LIMIT))
+    );
+
     // Calculate servers needed for storage
-    const totalStorageGB = totalResources.storage;
-    const usableStoragePerDisk = serverConfig.diskSize * RAID_FACTORS[serverConfig.raidType];
-    const usableStoragePerServer = usableStoragePerDisk * serverConfig.disksPerServer;
-    const serversForStorage = Math.ceil(totalStorageGB / (usableStoragePerServer * UTILIZATION_LIMIT));
-    
-    // Get the maximum number of servers needed based on all resources
-    let maxServers = Math.max(serversForCompute, serversForStorage, serversForMemory);
-    
-    // Add N+1 if configured
-    let totalServers = considerNPlusOne ? maxServers + 1 : maxServers;
+    const usableStoragePerServer = serverConfig.diskSize * serverConfig.diskQuantity * RAID_FACTORS[serverConfig.raidType];
+    const serversForStorage = Math.ceil(
+      (totalResources.storage / (usableStoragePerServer * UTILIZATION_LIMIT))
+    );
+
+    // Get the maximum number of servers needed
+    const maxServers = Math.max(serversForCompute, serversForMemory, serversForStorage);
+
+    // Add N+1 if specified
+    const totalServers = serverConfig.nPlusOne ? maxServers + 1 : maxServers;
 
     return {
       total: totalServers,
       forCompute: serversForCompute,
       forStorage: serversForStorage,
-      forMemory: serversForMemory,
-      storagePerServer: usableStoragePerServer
+      forMemory: serversForMemory
     };
   };
 
@@ -194,7 +232,7 @@ const VirtualizationCalculator = () => {
     if (!selectedProcessor) return { cpu: 0, memory: 0, storage: 0 };
     
     const totalResources = calculateTotalResources();
-    const serverReqs = calculateRequiredServers();
+    const serverReqs = calculateRequiredServers(totalResources, serverConfig, processors);
     
     // Calculate CPU utilization
     const totalAvailableCores = serverReqs.total * selectedProcessor.cores * 2;
@@ -205,7 +243,7 @@ const VirtualizationCalculator = () => {
     const memoryUtilization = (totalResources.memory / totalAvailableMemory) * 100;
     
     // Calculate storage utilization
-    const totalAvailableStorage = serverReqs.total * serverReqs.storagePerServer;
+    const totalAvailableStorage = serverReqs.total * (serverConfig.diskSize * serverConfig.diskQuantity * RAID_FACTORS[serverConfig.raidType]);
     const storageUtilization = (totalResources.storage / totalAvailableStorage) * 100;
     
     return {
@@ -217,13 +255,13 @@ const VirtualizationCalculator = () => {
 
   const calculateTotalSpecInt = () => {
     if (!selectedProcessor) return 0;
-    const servers = calculateRequiredServers().total;
+    const servers = calculateRequiredServers(calculateTotalResources(), serverConfig, processors).total;
     return servers * selectedProcessor.spec_int_base * 2;
   };
 
   const calculateTotalCost = () => {
     if (!selectedProcessor) return 0;
-    const serverReqs = calculateRequiredServers();
+    const serverReqs = calculateRequiredServers(calculateTotalResources(), serverConfig, processors);
     return serverReqs.total * selectedProcessor.price * 2;
   };
 
@@ -269,7 +307,12 @@ const VirtualizationCalculator = () => {
         raidType: 'RAID 5',
         memoryDimmSize: 32,
         memoryDimmsPerServer: 16,
-        maxUtilization: 90
+        maxUtilization: 90,
+        processorId: '',
+        memorySize: 0,
+        memoryQuantity: 0,
+        diskQuantity: 0,
+        nPlusOne: true
       });
 
       // Reset other settings
@@ -284,7 +327,7 @@ const VirtualizationCalculator = () => {
   };
 
   const totalResources = calculateTotalResources();
-  const serverRequirements = calculateRequiredServers();
+  const serverRequirements = calculateRequiredServers(totalResources, serverConfig, processors);
   const utilization = calculateResourceUtilization();
 
   const utilizationCards = [
@@ -655,7 +698,7 @@ const VirtualizationCalculator = () => {
               <div className="text-sm text-slate-400 mb-1">Total Storage</div>
               <div className="text-2xl font-bold">{formatStorage(totalResources.storage)}</div>
               <div className="text-sm text-slate-400">
-                {formatStorage(serverRequirements.storagePerServer)} per server
+                {formatStorage(serverRequirements.forStorage)} per server
               </div>
             </div>
           </div>
